@@ -1,0 +1,373 @@
+*------------------------------------------------------------------------------
+*
+*	hlk.mac - struct macros for hlk
+*
+*------------------------------------------------------------------------------
+
+
+* Fixed Number -------------------------------- *
+
+TAB:		.equ		$09
+LF:		.equ		$0a
+CR:		.equ		$0d
+EOF:		.equ		$1a
+SPACE:		.equ		$20
+
+		.ifdef		__CRLF__
+CRLF:		.reg		CR,LF
+		.else
+CRLF:		.equ		LF
+		.endif
+
+STDERR:		.equ		2
+
+EXEC:		.equ		7
+ARCHIVE:	.equ		5
+
+EXIT_SUCCESS:	.equ		0
+EXIT_FAILURE:	.equ		1
+
+
+* HLK defines --------------------------------- *
+
+ALIGN_DEFAULT:	.equ		2
+ALIGN_MIN:	.equ		2
+ALIGN_MAX:	.equ		256
+		.fail		ALIGN_MAX.gt.65536
+
+
+* Offset Table -------------------------------- *
+
+;Nameck Buffer
+		.offset	0
+NAMECK_Drive:	.ds.b	2
+NAMECK_Path:	.ds.b	65
+NAMECK_Name:	.ds.b	19
+NAMECK_Ext:	.ds.b	5
+NAMECK_SIZE:
+		.fail	$.ne.91
+		.text
+
+X_MAGIC_ID:	.equ	'HU'
+		.offset	0
+X_Magic:	.ds	1
+		.ds.b	1
+X_LoadMode:	.ds.b	1
+X_BaseAdr:	.ds.l	1
+X_ExecAdr:	.ds.l	1
+X_TextSize:	.ds.l	1
+X_DataSize:	.ds.l	1
+X_BssSize:	.ds.l	1
+X_RelocateSize:	.ds.l	1
+X_SymbolSize:	.ds.l	1
+X_ScdLineSize:	.ds.l	1
+X_ScdSymSize:	.ds.l	1
+X_ScdSym2Size:	.ds.l	1
+		.ds.l	4
+X_BindOffset:	.ds.l	1
+X_HEADER_SIZE:
+		.fail	$.ne.64
+
+
+* Work ---------------------------------------- *
+
+		.global		workbuf
+
+		.offset	0
+
+;global(longword)
+OBJ_SIZE:	.ds.l		1
+
+TEXT_SIZE:	.ds.l		1
+DATA_SIZE:	.ds.l		1
+BSS_SIZE:	.ds.l		1
+COMMON_SIZE:	.ds.l		1
+STACK_SIZE:	.ds.l		1
+RDATA_SIZE:	.ds.l		1
+RBSS_SIZE:	.ds.l		1
+RCOMMON_SIZE:	.ds.l		1
+RSTACK_SIZE:	.ds.l		1
+RLDATA_SIZE:	.ds.l		1
+RLBSS_SIZE:	.ds.l		1
+RLCOMMON_SIZE:	.ds.l		1
+RLSTACK_SIZE:	.ds.l		1
+
+RDATA_D_SIZE:	.ds.l		1
+RLDATA_D_SIZE:	.ds.l		1
+
+CTOR_SIZE:	.ds.l		1
+DTOR_SIZE:	.ds.l		1
+
+CTOR_LIST_PTR:	.ds.l		1
+DTOR_LIST_PTR:	.ds.l		1
+
+ROFF_TBL_ADR:	.ds.l		1
+ROFF_TBL_SIZE:	.ds.l		1
+
+COMMON_POS:	.ds.l		1
+RCOMMON_POS:	.ds.l		1
+RLCOMMON_POS:	.ds.l		1
+
+OBJ_LIST_HEAD:	.ds.l		1
+OBJ_LIST_WP:	.ds.l		1
+
+LINK_LIST_HEAD:	.ds.l		1
+LINK_LIST_WP:	.ds.l		1
+
+LIB_PATH_HEAD:	.ds.l		1
+LIB_PATH_WP:	.ds.l		1
+
+MALLOC_PTR_HEAD:.ds.l		1
+MALLOC_PTR_TAIL:.ds.l		1
+MALLOC_LEFT:	.ds.l		1
+
+CALC_STACK_BOT:	.ds.l		1
+CALC_STACK_TOP:	.ds.l		1
+CALC_STACK_PTR:	.ds.l		1
+
+EXEC_ADDRESS:	.ds.l		1
+BASE_ADDRESS:	.ds.l		1
+
+EXEC_NAME:	.ds.b		128
+MAP_NAME:	.ds.b		128
+
+TEMP_SIZE:	.equ		1024
+TEMP:		.ds.b		TEMP_SIZE
+
+;getarg.s
+ARGC:		.ds.l		1
+ARGV:		.ds.l		1
+ARGV_LEFT:	.ds.l		1
+ARG_SIZE:	.ds.l		1
+ARG_BUF:	.ds.l		1
+ARG_BUF_LEFT:	.ds.l		1
+ARG_BUF_PTR:	.ds.l		1
+
+;label.s
+HASH_TABLE:	.ds.l		1
+
+;main.s
+SYS_INFO_ADR:	.ds.l		1
+*SYS_INFO_SIZE:	.ds.l		1
+CDTOR_DSB_PTR:	.ds.l		1
+
+;make_map.s
+MAP_BUF_SIZE:	.ds.l		1
+MAP_BUF_ADR:	.ds.l		1
+
+;global(word)
+EXIT_CODE:	.ds		1
+
+DO_CTOR_FLAG:	.ds.b		1
+DO_DTOR_FLAG:	.ds.b		1
+
+;global(byte)
+TITLE_FLAG:	.ds.b		1
+*INDIR_FLAG:	.ds.b		1
+VERBOSE_FLAG:	.ds.b		1
+WARNOFF_FLAG:	.ds.b		1
+CUT_SYM_FLAG:	.ds.b		1
+LOADMODE:	.ds.b		1
+MK_MAP_FLAG:	.ds.b		1
+MK_SZ_INFO_FLAG:.ds.b		1
+G2LK_MODE_FLAG:	.ds.b		1
+
+NO_X_EXT_FLAG:	.ds.b		1
+OPT_AN_FLAG:	.ds.b		1
+
+EXEC_FILE_TYPE:	.ds.b		1
+OPT_RN_FLAG:	.ds.b		1
+
+SLASH_CHAR:	.ds.b		1
+
+;end of work buffer
+		.quad
+WORK_SIZE:
+		.text
+
+
+* Macro --------------------------------------- *
+
+PUSH:		.macro		register
+		movem.l		register,-(sp)
+		.endm
+
+
+POP:		.macro		register
+		movem.l		(sp)+,register
+		.endm
+
+
+*------------------------------------------------------------------------------
+
+arg1:		.reg		 (8,a6)
+arg2:		.reg		(12,a6)
+arg3:		.reg		(16,a6)
+arg4:		.reg		(20,a6)
+arg5:		.reg		(24,a6)
+arg6:		.reg		(28,a6)
+arg7:		.reg		(32,a6)
+arg8:		.reg		(36,a6)
+arg9:		.reg		(40,a6)
+arg10:		.reg		(44,a6)
+arg11:		.reg		(48,a6)
+arg12:		.reg		(52,a6)
+arg13:		.reg		(56,a6)
+arg14:		.reg		(60,a6)
+arg15:		.reg		(64,a6)
+arg16:		.reg		(68,a6)
+arg17:		.reg		(72,a6)
+arg18:		.reg		(76,a6)
+arg19:		.reg		(80,a6)
+arg20:		.reg		(84,a6)
+
+
+*------------------------------------------------------------------------------
+
+_obj_list_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		    (_OFF_,_REG_)
+LBL&_full_path:	.reg		  (0+_OFF_,_REG_)
+LBL&_lib_name:	.reg		  (4+_OFF_,_REG_)
+LBL&_obj_name:	.reg		  (8+_OFF_,_REG_)
+LBL&_obj_size:	.reg		 (12+_OFF_,_REG_)
+LBL&_obj_image:	.reg		 (16+_OFF_,_REG_)
+LBL&_scdinfo:	.reg		 (20+_OFF_,_REG_)
+LBL&_scdinfo_s:	.reg		 (24+_OFF_,_REG_)
+LBL&_labelinfo:	.reg		 (28+_OFF_,_REG_)
+LBL&_labelinfo_s:.reg		 (32+_OFF_,_REG_)
+LBL&_link_flag:	.reg		 (36+_OFF_,_REG_)
+
+LBL&_text_size:	.reg		 (38+_OFF_,_REG_)
+LBL&_data_size:	.reg		 (42+_OFF_,_REG_)
+LBL&_bss_size:	.reg		 (46+_OFF_,_REG_)
+LBL&_stack_size:.reg		 (50+_OFF_,_REG_)
+LBL&_rdata_size:.reg		 (54+_OFF_,_REG_)
+LBL&_rbss_size:	.reg		 (58+_OFF_,_REG_)
+LBL&_rstack_size:.reg		 (62+_OFF_,_REG_)
+LBL&_rldata_size:.reg		 (66+_OFF_,_REG_)
+LBL&_rlbss_size:.reg		 (70+_OFF_,_REG_)
+LBL&_rlstack_size:.reg		 (74+_OFF_,_REG_)
+LBL&_text_pos:	.reg		 (78+_OFF_,_REG_)
+LBL&_data_pos:	.reg		 (82+_OFF_,_REG_)
+LBL&_bss_pos:	.reg		 (86+_OFF_,_REG_)
+LBL&_stack_pos:	.reg		 (90+_OFF_,_REG_)
+LBL&_rdata_pos:	.reg		 (94+_OFF_,_REG_)
+LBL&_rbss_pos:	.reg		 (98+_OFF_,_REG_)
+LBL&_rstack_pos:.reg		(102+_OFF_,_REG_)
+LBL&_rldata_pos:.reg		(106+_OFF_,_REG_)
+LBL&_rlbss_pos:	.reg		(110+_OFF_,_REG_)
+LBL&_rlstack_pos:.reg		(114+_OFF_,_REG_)
+LBL&_req_list:	.reg		(118+_OFF_,_REG_)
+LBL&_xdef_tbl:	.reg		(122+_OFF_,_REG_)
+LBL&_xref_tbl:	.reg		(126+_OFF_,_REG_)
+LBL&_xref_begin:.reg		(130+_OFF_,_REG_)
+LBL&_xref_end:	.reg		(134+_OFF_,_REG_)
+LBL&_next:	.reg		(138+_OFF_,_REG_)
+LBL&_align_size:.reg		(142+_OFF_,_REG_)
+
+LBL&_xdef_fc:	.reg		(146+_OFF_,_REG_)
+LBL&_xdef_fd:	.reg		(147+_OFF_,_REG_)
+LBL&_xdef_fe:	.reg		(148+_OFF_,_REG_)
+LBL&_xdef_ff:	.reg		(149+_OFF_,_REG_)
+LBL&_xdef_00:	.reg		(150+_OFF_,_REG_)
+LBL&_xdef_01:	.reg		(151+_OFF_,_REG_)
+LBL&_xdef_02:	.reg		(152+_OFF_,_REG_)
+LBL&_xdef_03:	.reg		(153+_OFF_,_REG_)
+LBL&_xdef_04:	.reg		(154+_OFF_,_REG_)
+LBL&_xdef_05:	.reg		(155+_OFF_,_REG_)
+LBL&_xdef_06:	.reg		(156+_OFF_,_REG_)
+LBL&_xdef_07:	.reg		(157+_OFF_,_REG_)
+LBL&_xdef_08:	.reg		(158+_OFF_,_REG_)
+LBL&_xdef_09:	.reg		(159+_OFF_,_REG_)
+LBL&_xdef_0a:	.reg		(160+_OFF_,_REG_)
+*LBL&_xdef_0b:	.reg		(161+_OFF_,_REG_)
+LBL&_doctor_flag:.reg		(162+_OFF_,_REG_)
+LBL&_dodtor_flag:.reg		(163+_OFF_,_REG_)
+LBL&_ctor_size:.reg		(164+_OFF_,_REG_)
+LBL&_dtor_size:.reg		(168+_OFF_,_REG_)
+		.endm
+__obj_list__:	.equ		172
+
+*------------------------------------------------------------------------------
+
+_xdef_table_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		  (_OFF_,_REG_)
+LBL&_xdef_data:	.reg		(0+_OFF_,_REG_)
+LBL&_xdef_list:	.reg		(4+_OFF_,_REG_)
+		.endm
+__xdef_table__:	.equ		8
+
+*------------------------------------------------------------------------------
+
+_xref_table_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		  (_OFF_,_REG_)
+LBL&_xref_data:	.reg		(0+_OFF_,_REG_)
+LBL&_xdef_list:	.reg		(4+_OFF_,_REG_)
+		.endm
+__xref_table__:	.equ		8
+
+*------------------------------------------------------------------------------
+
+_xdef_list_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		   (_OFF_,_REG_)
+LBL&_obj_list:	.reg		 (0+_OFF_,_REG_)
+LBL&_label_name:.reg		 (4+_OFF_,_REG_)
+LBL&_stat:	.reg		 (8+_OFF_,_REG_)
+LBL&_type:	.reg		(10+_OFF_,_REG_)
+LBL&_value:	.reg		(12+_OFF_,_REG_)
+LBL&_size:	.reg		(16+_OFF_,_REG_)
+LBL&_err_list:	.reg		(20+_OFF_,_REG_)
+LBL&_next:	.reg		(24+_OFF_,_REG_)
+		.endm
+__xdef_list__:	.equ		28
+
+*------------------------------------------------------------------------------
+
+_err_list_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		  (_OFF_,_REG_)
+LBL&_obj_list:	.reg		(0+_OFF_,_REG_)
+LBL&_next:	.reg		(4+_OFF_,_REG_)
+		.endm
+__err_list__:	.equ		8
+
+*------------------------------------------------------------------------------
+
+_req_list_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		  (_OFF_,_REG_)
+LBL&_name:	.reg		(0+_OFF_,_REG_)
+LBL&_next:	.reg		(4+_OFF_,_REG_)
+		.endm
+__req_list__:	.equ		8
+
+*------------------------------------------------------------------------------
+
+_link_list_:	.macro		LBL,_REG_,_OFF_
+LBL:		.reg		  (_OFF_,_REG_)
+LBL&_obj_list:	.reg		(0+_OFF_,_REG_)
+LBL&_next:	.reg		(4+_OFF_,_REG_)
+		.endm
+__link_list__:	.equ		8
+
+*------------------------------------------------------------------------------
+
+;セクション番号
+SECT_RLCOMM:	.equ	$fc	*コモンエリア(64KB以上相対)
+SECT_RCOMM:	.equ	$fd	*コモンエリア(64KB以内相対)
+SECT_COMM:	.equ	$fe	*コモンエリア
+SECT_XREF:	.equ	$ff	*外部参照
+SECT_ABS:	.equ	$00
+SECT_TEXT:	.equ	$01
+SECT_DATA:	.equ	$02
+SECT_BSS:	.equ	$03
+SECT_STACK:	.equ	$04
+SECT_RDATA:	.equ	$05
+SECT_RBSS:	.equ	$06
+SECT_RSTACK:	.equ	$07
+SECT_RLDATA:	.equ	$08
+SECT_RLBSS:	.equ	$09
+SECT_RLSTACK:	.equ	$0a
+**
+**SECT_CTOR:	.equ	$0c
+**SECT_DTOR:	.equ	$0d
+
+*------------------------------------------------------------------------------

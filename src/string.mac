@@ -1,0 +1,62 @@
+*------------------------------------------------------------------------------
+*
+*	string.mac - string function call macro
+*
+*------------------------------------------------------------------------------
+
+		.xref		strcpy
+		.xref		strcat
+		.xref		strlen
+	.if	0
+		.xref		strupr
+		.xref		strlwr
+	.endif
+		.xref		strcmp
+
+*------------------------------------------------------------------------------
+
+_strcpy:	.macro		dst,sou
+		pea		sou
+		pea		dst
+		bsr		strcpy
+		addq.l		#8,sp
+		.endm
+
+
+_strcat:	.macro		dst,sou
+		pea		sou
+		pea		dst
+		bsr		strcat
+		addq.l		#8,sp
+		.endm
+
+
+_strlen:	.macro		string
+		pea		string
+		bsr		strlen
+		addq.l		#4,sp
+		.endm
+
+
+_strupr:	.macro		string
+		pea		string
+		bsr		strupr
+		addq.l		#4,sp
+		.endm
+
+
+_strlwr:	.macro		string
+		pea		string
+		bsr		strlwr
+		addq.l		#4,sp
+		.endm
+
+
+_strcmp:	.macro		str1,str2
+		pea		str2
+		pea		str1
+		bsr		strcmp
+		addq.l		#8,sp
+		.endm
+
+*------------------------------------------------------------------------------

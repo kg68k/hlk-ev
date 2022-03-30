@@ -1,0 +1,446 @@
+
+================================================================================
+
+・暫定追加コマンド
+
+hlk evolution で暫定的に追加したコマンド。
+gcc2 に付属の g2as/g2lk のコマンドとは互換性がない。
+試作段階なので変更される可能性がある。
+
+    4c 01 adr.l                                             ( .ctor text:adr )
+    4d 01 adr.l                                             ( .dtor text:adr )
+
+        対象アドレスを静的コンストラクタ/デストラクタのテーブルに登録する。
+        テキストセクション以外は未対応。
+
+    c0 0c sect_size.l : 'ctor' : 0 : even                           ( header )
+    c0 0d sect_size.l : 'dtor' : 0 : even
+
+        .ctor/.dtor の数*4。
+        両方とも 0 なら出力されないが、そうでなければ両方とも出力される。
+
+    e0 0c                                                          ( .doctor )
+    e0 0d                                                          ( .dodtor )
+
+        静的コンストラクタ/デストラクタを処理するルーチンを含むオブジェクト
+        であることを示す。
+
+
+================================================================================
+
+[ kaiseki.doc ]
+
+    この資料は、そると が個人的に解析した結果です。
+
+    この結果は僕個人で調べた物なので、決してシャープ、ハドソン、その他関
+    係がありそうな会社、各種団体などには問い合わせないで下さい。:-)
+
+    何か疑問に思ったこと、知りたいこと等がありましたら、僕に聞いてくださ
+    い。できる限りの範囲でお答えしたいと思います。
+
+    この資料はＰＤＤとします。
+
+
+§ 語句の定義など
+
+○ label_no             外部参照またはコモンラベルの登録された時の順番
+
+○ セクション番号
+
+    番号の後に * が付いたものは SXhas 用の番号です。
+
+    fc* rcommon         コモンエリアのラベル
+    fd* rlcommon        コモンエリアのラベル
+    fe  common          コモンエリアのラベル
+    ff  xref            外部参照、または外部定義のラベル
+    00  abs             定数
+    01  text            テキストセクションのアドレス
+    02  data            データセクションのアドレス
+    03  bss             ブロックトレースセクションのアドレス
+    04  stack           スタックセクションのアドレス
+    05* rdata           データセクションのアドレス
+    06* rbss            ブロックトレースセクションのアドレス
+    07* rstack          スタックセクションのアドレス
+    08* rldata          データセクションのアドレス
+    09* rlbss           ブロックトレースセクションのアドレス
+    0a* rlstack         スタックセクションのアドレス
+
+○ 追加されたオブジェクトコマンド
+
+    47 {fe-ff} : label no.w                                    ( dc.b  label )*
+
+    この様に最後に'*'がついているコマンドは、as v2.00 で追加された物です。
+    （なんで、こんな意味のない事をしたの？ > Hudson）
+
+
+§ オブジェクト・ファイルのコマンド
+
+
+    00 00                                                              ( end )
+
+        オブジェクトファイルの終わりに必ずつきます。
+
+
+    10 (size.b - 1) : data (size_byte) : even          ( dc.b  ??,??,....,?? )
+
+        アドレスに依存しない定数もしくは命令です。
+        ２５６バイトを超える場合は分割されます。
+
+
+    20 sect.b : 0.l                                         ( change section )
+
+        セクションを変更します。
+        アセンブラの .text .data 疑似命令などに相当します。
+
+
+    30 00 : size.l                                            ( ds.b  size.l )
+
+        メモリ領域を確保します
+        アセンブラの .ds.b 疑似命令に相当します。
+
+        .text .data セクションの場合、リンカーはその範囲を００で埋めます。
+
+
+    43 {fc-ff} : label no.w                                    ( dc.b  label )
+    47 {fe-ff} : label no.w                                    ( dc.b  label )*
+    41 {fc-ff} : label no.w                                    ( dc.w  label )
+    45 {fe-ff} : label no.w                                    ( dc.w  label )*
+    42 {fc-ff} : label no.w                                    ( dc.l  label )
+    46 {fc-ff} : label no.w                                    ( dc.l  label )
+
+        外部参照のラベルの値をプログラム内のアドレスに変換してその値を書
+        き込みます。
+
+        ロングワード以外は、定数でなければいけません。
+
+        値が、それぞれ書き込む値の範囲を超える時はエラーとなります
+                ｂｙｔｅ                －＄８０～＄ｆｆ
+                ｗｏｒｄ            －＄８０００～＄ｆｆｆｆ
+                ｌｏｎｇ    －＄８０００００００～＄ｆｆｆｆｆｆｆｆ
+
+        43 {fc-ff} は、同じ動作をするコマンドです。他も同様です。
+        ａｄｒ－ａｄｒ２は定数扱いになります。
+
+        47, 45 は、以下の様なソースをアセンブルすると、生成されます。
+        （as v2.00のみ）
+  ----------------------------------------------------------------------------
+        .xref   data_pos
+
+        move.w  data_pos(a0),d0                 * 45 ff
+        move.w  data_pos(a0,d1),d0              * 47 ff
+  ----------------------------------------------------------------------------
+
+
+    43 sect.b : adr.l                                       ( dc.b  sect:adr )
+    41 sect.b : adr.l                                       ( dc.w  sect:adr )
+    42 sect.b : adr.l                                       ( dc.l  sect:adr )
+    46 sect.b : adr.l                                       ( dc.l  sect:adr )
+
+        各エリアでのアドレスをプログラム内のアドレスに変換してその値を書
+        き込みます。
+
+        ロングワード以外は、定数でなければいけません。
+
+        ａｄｒ－ａｄｒ２は定数扱いになります。
+
+
+    40 {fc-ff} : label_no.w                                  ( dc.b  0,label )
+
+        外部参照のラベルの値をプログラム内のアドレスに変換してその値を書
+        き込みます。
+
+        値が定数でない場合か、－＄８０～＄ｆｆの範囲を超える場合はエラー
+        となります。
+
+        以下の様なソースをアセンブルすると、このコマンドが生成されます。
+  ----------------------------------------------------------------------------
+        .xref           test_bit
+
+        btst.b          #test_bit,(a0)
+  ----------------------------------------------------------------------------
+
+
+    40 sect.b : adr.l                                     ( dc.b  0,sect:adr )
+
+        必ずエラーになります。
+	（ベースアドレスが指定されていない場合？）
+
+
+    50 ff      : label no.w : num.l
+
+        以下の様なソースをアセンブルすると、このコマンドが生成されます。
+  ----------------------------------------------------------------------------
+        .xref           XREF_LABEL
+        move.b          #XREF_LABEL-1,d0
+  ----------------------------------------------------------------------------
+        GORRY さんからの指摘で oo がパッチを当てましたが、ff 以外の sect.b が
+        あるかどうかは不明です(1997/01/19)。
+
+
+    53 {fc-ff} : label no.w : num.l                        ( dc.b  label+num )
+    57 {fe-ff} : label no.w : num.l                        ( dc.b  label+num )*
+    51 {fc-ff} : label no.w : num.l                        ( dc.w  label+num )
+    55 {fe-ff} : label no.w : num.l                        ( dc.w  label+num )*
+    52 {fc-ff} : label no.w : num.l                        ( dc.l  label+num )
+    56 {fc-ff} : label no.w : num.l                        ( dc.l  label+num )
+
+        ４ｘと同様ですがオフセットがつきます。
+
+
+    53 sect.b : adr.l : num.l                           ( dc.b  sect:adr+num )
+    51 sect.b : adr.l : num.l                           ( dc.w  sect:adr+num )
+    52 sect.b : adr.l : num.l                           ( dc.l  sect:adr+num )
+    56 sect.b : adr.l : num.l                           ( dc.l  sect:adr+num )
+
+        ４ｘと同様ですがオフセットがつきます。
+
+
+    65 sect.b : adr.l : label no.w                    ( dc.w  label-sect:adr )
+    69 sect.b : adr.l : label no.w                    ( dc.w  label-sect:adr )*
+
+        ラベルのアドレスからａｄｒを引いた値を書き込みます。
+
+        値が定数でない場合か、－＄８０００～＄７ｆｆｆの範囲を超える場合
+        はエラーとなります。
+
+        以下の様なソースをアセンブルすると、このコマンドが生成されます。
+  ----------------------------------------------------------------------------
+        .xref   function
+
+        bsr     function
+  ----------------------------------------------------------------------------
+
+
+    80 {fc-ff} : label no.w                                 ( push  label    )*
+    80 00      : num.l                                      ( push  num      )
+    80 sect.b  : adr.l                                      ( push  sect:adr )
+
+        それぞれの値を演算用スタックに積みます。
+
+
+    93 00                                                ( dc.b  (sp) : sp++ )
+    91 00                                                ( dc.w  (sp) : sp++ )
+    92 00                                                ( dc.l  (sp) : sp++ )
+    96 00                                                ( dc.l  (sp) : sp++ )
+
+        演算用スタックの先頭から値を取り出して書き込みます。
+
+        値が書き込む値の範囲を超える時はエラーとなります。
+        ロングワード以外は、定数でなければいけません。
+
+
+    90 00                                              ( dc.b  0,(sp) : sp++ )
+
+        演算用スタックの先頭から値を取り出して書き込みます。
+
+        値が定数でない場合か、－＄８０～＄ｆｆの範囲を超える場合はエラー
+        となります。
+
+
+    99 00                                                ( dc.w  (sp) : sp++ )
+
+        演算用スタックの先頭から値を取り出して書き込みます。
+
+        値が定数でない場合か、－＄８０００～＄７ｆｆｆの範囲を超える場合
+        はエラーとなります。
+
+
+    a0 01                                    ( (sp)   = -(sp)                    )
+    a0 02                                    ( (sp)   = (sp)                     )
+    a0 03                                    ( (sp)   = .not.(sp)                )
+    a0 04                                    ( (sp)   = .high.(sp)               )
+    a0 05                                    ( (sp)   = .low.(sp)                )
+    a0 06                                    ( (sp)   = .highw.(sp)              )
+    a0 07                                    ( (sp)   = .loww.(sp)               )
+
+    a0 09                                    ( (sp+1) = (sp+1) * (sp)     : sp++ )
+    a0 0a                                    ( (sp+1) = (sp+1) / (sp)     : sp++ )
+    a0 0b                                    ( (sp+1) = (sp+1) % (sp)     : sp++ )
+    a0 0c                                    ( (sp+1) = (sp+1) .shr. (sp) : sp++ )
+    a0 0d                                    ( (sp+1) = (sp+1) .shl. (sp) : sp++ )
+    a0 0e                                    ( (sp+1) = (sp+1) .asr. (sp) : sp++ )
+    a0 0f                                    ( (sp+1) = (sp+1) - (sp)     : sp++ )
+    a0 10                                    ( (sp+1) = (sp+1) + (sp)     : sp++ )
+    a0 11                                    ( (sp+1) = (sp+1) .eq. (sp)  : sp++ )
+    a0 12                                    ( (sp+1) = (sp+1) .ne. (sp)  : sp++ )
+    a0 13                                    ( (sp+1) = (sp+1) .lt. (sp)  : sp++ )
+    a0 14                                    ( (sp+1) = (sp+1) .le. (sp)  : sp++ )
+    a0 15                                    ( (sp+1) = (sp+1) .gt. (sp)  : sp++ )
+    a0 16                                    ( (sp+1) = (sp+1) .ge. (sp)  : sp++ )
+    a0 17                                    ( (sp+1) = (sp+1) .slt. (sp) : sp++ )
+    a0 18                                    ( (sp+1) = (sp+1) .sle. (sp) : sp++ )
+    a0 19                                    ( (sp+1) = (sp+1) .sgt. (sp) : sp++ )
+    a0 1a                                    ( (sp+1) = (sp+1) .sge. (sp) : sp++ )
+    a0 1b                                    ( (sp+1) = (sp+1) .and. (sp) : sp++ )
+    a0 1c                                    ( (sp+1) = (sp+1) .xor. (sp) : sp++ )
+    a0 1d                                    ( (sp+1) = (sp+1) .or. (sp)  : sp++ )
+
+        スタック間の演算を行います。ａｄｄとｓｕｂ以外は定数しか扱えません。
+
+
+    b2 00      : abs        : label : 0 : even     ( xdef  label = abs       )
+    b2 sect.b  : adr.l      : label : 0 : even     ( xdef  label = sect:adr  )
+    b2 {fc-fe} : size.l     : label : 0 : even     ( comm  label, size       )
+    b2 ff      : label no.l : label : 0 : even     ( xref  label             )
+    b0 ff      : label no.l : label : 0 : even     ( xref  label             )
+
+        ラベルの定義をします。
+
+        b2 sect.b : size.l : '*'+filename+'*' : 0 : even (sect!=ff)
+        の場合はアラインサイズをsizeにします(1997/08/08 立花).
+
+
+    c0 sect.b : sect_size.l : sect_name : 0 : even                  ( header )
+
+        オブジェクトファイルの先頭に付くヘッダーです。
+
+
+    d0 00 : file_size.l : file_name : 0 : even                   ( file_name )
+
+        オブジェクトを作った時のファイル名が格納されます。
+        必ずしも元のファイル名と同じでなくても構わないはずです。
+
+        ※size.lは存在しません(1997/08/08 立花).
+
+
+    e0 00 : sect.w : start_adr.l                                 ( start_adr )
+
+        プログラムの実行アドレスを指定します。
+        指定されてない場合は、実行アドレスはプログラムの先頭と見なします。
+
+        複数存在する場合は、最後に指定したものが有効となります。
+
+
+    e0 01 : file_name : 0 : even                                   ( request )
+
+        オブジェクトファイルの取り込みを要求します。パスは通りません。
+        アセンブラの request と同じです。
+
+        いくらネストしても構いません、既に取り込んでいた場合は無視します。
+
+
+§ オブジェクトファイルのフォーマット
+
+    オブジェクトファイルでは、各コマンドが以下の順番に並んでいます。
+
+        d0 00 : file_size.l  : file name : 0 : even
+        c0 01 : text_size.l  : 'text'    : 0 : even
+        c0 02 : data_size.l  : 'data'    : 0 : even
+        c0 03 : bss_size.l   : 'bss'     : 0 : even
+        c0 04 : stack_size.l : 'stack'   : 0 : even
+        e0 ??
+          .
+          .
+        e0 ??
+        b? ??
+          .
+          .
+        b? ??
+
+        [その他のコマンド]
+
+        00 00
+
+§ アーカイブファイルのフォーマット
+
+.a の場合
+
+    D1 00 00 00 00 02                   ヘッダー
+    --------------------------------
+    +00 object_name + '\0'
+    +18 object_size
+    +1c object_file_date
+    +20 object_file
+    +?? object_image
+    +?? 
+    --------------------------------    これの繰り返し
+
+
+.l の場合
+
+    -- header --
+    +000000 00 68           ID
+    +000002                 lib name
+    +00001a                 lib size
+    +000020 00 00 00 40     header size
+    +000024                 obj info. size
+    +000028                 label info. pos
+    +00002c                 label info. size
+    +000030                 label name info. pos
+    +000034                 lanel name info. size
+
+    -- obj info. --
+    +000000                 obj name
+    +000018                 label info. pos
+    +00001c                 obj image pos
+    +000020                 obj image size
+    +000024                 obj file date
+    +000028                 reserved
+                    .
+                    .
+    +00002f
+
+    （以下略）
+
+
+§ 実行ファイルのフォーマット
+
+    [header]
+    +00 48 55 00 00 00 00 00 00         'HU'
+    +08 exec address
+    +0c text section size
+    +10 data section size
+    +14 bss+common+stack section size
+    +18 offset_data size
+    +1c symbol_data size
+    +20 SCD line number table size
+    +24 SCD information size
+    +28 SCD name table size
+    +2c reserved
+
+    +40 code, data
+    +??
+    +?? offset_data
+    +??
+    +?? symbol_data
+    +??
+    +?? SCD line number table size
+    +??
+    +?? SCD information size
+    +??
+    +?? SCD name table size
+    +??
+
+
+§ オフセットデータのフォーマット
+
+    オフセットデータとは、ロードする際にアロケート情報が必要な場所の情報
+    です。
+
+    詳しくはＸファイルをみてもらえれば判ると思います。（手抜き）
+
+             offset.w                   $00001 <  offset< $10000
+        0001 offset.l                   $10000 <= offset
+
+    offsetが奇数の場合は(offset & ~1)からの1ワードがアロケートされることに
+    なっていますが、この形式には対応していません. ワードで納まらないアドレ
+    スにロードされた時に正しく動作しないので、対応しても無駄だからです.
+    (1997/10/19 立花).
+
+
+§ ラベルデータのフォーマット
+
+    type address label_name 0 even
+                .
+                .
+    type address label_name 0 even
+
+    type
+    0003        common
+    0200        abs, rdata, rbss, rstack, rldata, rlbss, rlstack
+    0201        text
+    0202        data
+    0203        bss
+    0204        stack
+
+（ｅｏｆ）
