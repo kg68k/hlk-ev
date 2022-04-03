@@ -1374,9 +1374,7 @@ option_d_sym_end:
 		tst.b		d1
 		beq		ana_opt_b40		;'='で終わっていなければエラー
 		movea.l		a4,a3
-.ifdef OPT_D_DEC
 		move.b		#'$',-(a3)
-.endif
 		bsr		get_number
 		bmi		ana_opt_b40		;bad option
 
