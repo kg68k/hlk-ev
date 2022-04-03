@@ -2,9 +2,9 @@
 
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
-PATCHLEVEL:	.reg		'+14'
-PATCHDATE:	.reg		'2000/12/12'
-PATCHAUTHOR:	.reg		'立花えり子'
+PATCHLEVEL:	.reg		'+15'
+PATCHDATE:	.reg		'2022-04-03'
+PATCHAUTHOR:	.reg		'TcbnErik'
 
 	.ifdef	__G2LK__
 PROGNAME:	.reg		'g2lk'
@@ -1216,14 +1216,10 @@ ana_opt_b350:
 		beq		ana_opt_l10
 		bra		ana_opt_b50		;bad option
 
-* .if 1の場合(不便)
-* hlk foo.o -p(-> .map)
-* hlk -p foo.o(error)
-* .if 0の場合(こちらを推奨)
-* hlk foo.o -p(-> foo.map)
-* hlk -p foo.o(-> foo.map)
-* hlk -pbar foo.o(-> bar.map)
-* hlk -pfoo(error)
+* hlk foo.o -p	-> foo.map
+* hlk -p foo.o	-> foo.map
+* hlk -pbar foo.o  -> bar.map
+* hlk -pfoo	-> error
 
 
 * -0 (g2lk mode off)
@@ -1724,13 +1720,6 @@ make_map_name:
 		lea		(NAMECK_Ext,a2),a2
 		tst.b		(a2)
 		bne		mk_mapname_ext
-	.if	0
-;hlk -ap fooでかちあうので常に'.map'を補完する.
-		tst.b		(OPT_AN_FLAG,a6)
-		bne		mk_mapname_map
-		tst.b		(NO_X_EXT_FLAG,a6)
-		bne		mk_mapname_end
-	.endif
 mk_mapname_map:
 		lea		(ext_map,pc),a2
 mk_mapname_ext:	_strcat		(a0),(a2)
@@ -1741,14 +1730,6 @@ mk_mapname_end:
 
 
 *------------------------------------------------------------------------------
-
-	.if	0
-print_tab::
-		move	#TAB,-(sp)
-		DOS	_PUTCHAR
-		addq.l	#2,sp
-		rts
-	.endif
 
 print_spc::
 		move	#SPACE,-(sp)
@@ -1858,15 +1839,7 @@ usage_msg:	.dc.b		'usege: ',PROGNAME,' [switch] file [+file] ...',CRLF
 		.dc.b		'	-w		警告の出力禁止',CRLF
 		.dc.b		'	-x		シンボルテーブルの出力禁止',CRLF
 ****		.dc.b		'	-z		.z 形式実行ファイルの作成',CRLF
-.if 0
-	.ifdef	__G2LK__
-		.dc.b		'	-0		.ctor/.dtor に対応しない',CRLF
-	.else
-		.dc.b		'	-1		.ctor/.dtor に対応する',CRLF
-	.endif
-.else
 		.dc.b		'	-0 / -1		.ctor/.dtor に対応しない / する',CRLF
-.endif
 		.dc.b		CRLF
 		.dc.b		'	--help (-h)	使用法表示',CRLF
 		.dc.b		'	--quiet (-z)	--verbose (-v) オプションを取り消す',CRLF

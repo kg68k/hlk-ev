@@ -17,10 +17,8 @@
 
 		.xref	unknown_cmd
 
-		.if	1
 calc_size_err:	.reg	unknown_cmd
 skip:		.reg	skip_com
-		.endif
 
 
 * Text Section -------------------------------- *
@@ -81,19 +79,6 @@ calc_size_b20:
 		pop		d1-d6/a0-a3
 		unlk		a6
 		rts
-
-*------------------------------------------------------------------------------
-
-		.ifndef	calc_size_err
-calc_size_err:
-		bra		unknown_cmd
-		.endif
-
-		.ifndef	skip
-skip:
-		bsr		skip_com
-		rts
-		.endif
 
 *------------------------------------------------------------------------------
 

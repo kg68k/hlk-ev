@@ -6,18 +6,6 @@
 		.include	hlk.mac
 
 
-* Global Symbol ------------------------------- *
-
-		.xdef		strcpy
-		.xdef		strcat
-		.xdef		strlen
-	.if	0
-		.xdef		strupr
-		.xdef		strlwr
-	.endif
-		.xdef		strcmp
-
-
 * Text Section -------------------------------- *
 
 		.cpu		68000
