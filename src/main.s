@@ -925,17 +925,15 @@ ana_opt_next:
 		beq		option_0_g2lk_off
 		cmpi.b		#'1',d0
 		beq		option_1_g2lk_on
-.ifdef LD_OPT
-		cmpi.b		#'L',d0
-		beq		option_L_libpath
-.endif
-		andi		#$df,d0
-		subi.b		#'A',d0
-		cmpi.b		#'Z'-'A',d0
+
+		moveq		#$20,d1
+		or.b		d0,d1
+		subi.b		#'a',d1
+		cmpi.b		#'z'-'a',d1
 		bhi		ana_opt_b30
-		add		d0,d0
-		move		(@f,pc,d0.w),d0
-		jmp		(@f,pc,d0.w)
+		add		d1,d1
+		move		(@f,pc,d1.w),d1
+		jmp		(@f,pc,d1.w)
 @@:
 		.dc		ana_opt_b650-@b		;-a = no 'x' ext.
 		.dc		option_b_baseadr-@b	;-b = base address
@@ -948,7 +946,7 @@ ana_opt_next:
 		.dc		option_i_indirect-@b	;-i = indirect
 		.dc		ana_opt_b30-@b
 		.dc		ana_opt_b30-@b
-		.dc		ana_opt_b200-@b		;-l = lib path
+		.dc		option_l-@b		;-l = lib path
 		.dc		ana_opt_b250-@b		;-m = max label
 		.dc		ana_opt_b30-@b
 		.dc		ana_opt_b300-@b		;-o = obj name
@@ -1100,11 +1098,12 @@ option_i_file_err:
 
 
 * -l (lib path)
-ana_opt_b200:
-.ifdef LD_OPT
+option_l:
+		cmpi.b		#'L',d0
+		beq		option_L_libpath	;大文字ならライブラリ検索パスの指定
 		tst.b		(a2)
 		bne		option_l_lib
-.endif
+
 		lea		(TEMP,a6),a3
 		pea		(a3)
 		clr.l		-(sp)
@@ -1147,7 +1146,6 @@ append_lib_path:
 append_lib_path_end:
 		rts
 
-.ifdef LD_OPT
 * -l<lib> (lib)
 option_l_lib:
 		_strlen		(a2)
@@ -1180,7 +1178,6 @@ option_L_libpath:
 
 		bsr		append_lib_path
 		bra		ana_opt_l10
-.endif
 
 
 * -m num (max label)
@@ -1850,10 +1847,8 @@ usage_msg:	.dc.b		'usege: ',PROGNAME,' [switch] file [+file] ...',CRLF
 		.dc.b		'	-g num		ロードモードの設定(0～2)',CRLF
 		.dc.b		'	-i file		インダイレクトファイルの指定',CRLF
 		.dc.b		'	-l		ライブラリのパスとして環境変数 lib を使用する',CRLF
-.ifdef LD_OPT
 		.dc.b		'	-l<lib>		lib<lib>.a をリンクする',CRLF
 		.dc.b		'	-L path		ライブラリ検索パスの指定',CRLF
-.endif
 ****		.dc.b		'	-m num		最大シンボル数の設定(無効)',CRLF
 		.dc.b		'	-o file		実行ファイル名の指定',CRLF
 		.dc.b		'	-p[file]	マップファイルの作成',CRLF

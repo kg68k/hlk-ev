@@ -1,7 +1,7 @@
 # Makefile for HLK evolution
 
 AS	= has
-ASFLAGS	= -c4 -sLD_OPT -s__CRLF__
+ASFLAGS	= -c4 -s__CRLF__
 LD	= hlk
 
 #
