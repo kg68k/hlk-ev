@@ -22,7 +22,7 @@ OBJS2	= g2lk.o $(OBJS0)
 
 #
 
-all: $(HLK_R) $(G2LK_R)
+all: $(HLK_R) #$(G2LK_R)
 
 $(HLK_R): $(OBJS1)
 	$(LD) $(LDFLAGS) -r -o$@ $^
