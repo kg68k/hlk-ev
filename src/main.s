@@ -174,7 +174,7 @@ main:
 
 		bsr		init_hash
 
-		bsr		malloc_all
+		bsr		malloc_huge
 		move.l		d0,d2			;d0.l = malloc_ptr_head
 		add.l		d1,d2			;d2.l = malloc_ptr_tail
 							;d1.l = malloc_left
@@ -807,6 +807,34 @@ program_err::
 
 *------------------------------------------------------------------------------
 *
+*	malloc_huge
+*
+*	out:	d0.l	メモリ管理ポインタ
+*		d1.l	確保できたメモリのサイズ
+*
+*	メモリを確保できるだけ取る(大容量ハイメモリ対応)
+*	確保できない場合はエラー終了する
+*
+*------------------------------------------------------------------------------
+
+malloc_huge:
+		pea		(-1)
+		DOS		_MALLOC3
+		addq.l		#4,sp
+		move.l		d0,d1
+		addq.l		#1,d0
+		beq		malloc_all		;060turbo.sysは組み込まれていない
+
+		andi.l		#$0fff_ffff,d1
+		move.l		d1,-(sp)
+		DOS		_MALLOC3
+		move.l		d0,(sp)+
+		bmi		malloc_err
+		rts
+
+
+*------------------------------------------------------------------------------
+*
 *	malloc_all
 *
 *	out:	d0.l	メモリ管理ポインタ
@@ -819,22 +847,11 @@ program_err::
 
 malloc_all:
 		pea		(-1)
-		DOS		_MALLOC3
-		move.l		d0,d1
-		addq.l		#1,d0
-		beq		@f			;060turbo.sysは組み込まれていない
-
-		andi.l		#$0fff_ffff,d1
-		move.l		d1,(sp)
-		DOS		_MALLOC3
-		bra		9f
-@@:
 		DOS		_MALLOC
 		move.l		d0,d1
 		andi.l		#$00ffffff,d1
 		move.l		d1,(sp)
 		DOS		_MALLOC
-9:
 		move.l		d0,(sp)+
 		bmi		malloc_err
 		rts
