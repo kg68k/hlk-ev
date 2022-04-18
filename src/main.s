@@ -3,7 +3,7 @@
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
 PATCHLEVEL:	.reg		'+15'
-PATCHDATE:	.reg		'2022-04-03'
+PATCHDATE:	.reg		'2022-04-19'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
 	.ifdef	__G2LK__
@@ -56,6 +56,10 @@ SYS_INFO_LEN:	.equ		$40
 MAX_ARGC:	.equ		4096
 MY_STACK_SIZE:	.equ		32*1024
 CALC_STACK_SIZE:.equ		1024
+
+.ifndef _MALLOC3
+_MALLOC3:       .equ    $ff90
+.endif
 
 
 * Text Section -------------------------------- *
@@ -134,8 +138,6 @@ main:
 		move.l		d0,d2			;d2.l = argv_buf
 
 		bsr		malloc_all
-		tst.l		d0
-		bmi		malloc_err
 
 		move.l		d0,-(sp)		;arg_buf
 		move.l		d2,-(sp)		;argv_buf
@@ -173,9 +175,6 @@ main:
 		bsr		init_hash
 
 		bsr		malloc_all
-		tst.l		d0
-		bmi		malloc_err
-
 		move.l		d0,d2			;d0.l = malloc_ptr_head
 		add.l		d1,d2			;d2.l = malloc_ptr_tail
 							;d1.l = malloc_left
@@ -814,28 +813,30 @@ program_err::
 *		d1.l	確保できたメモリのサイズ
 *
 *	メモリを確保できるだけ取る
-*	確保されるメモリの大きさは、n*$100バイト
-*
-*	error:	d0.l	< 0	メモリが不足している
+*	確保できない場合はエラー終了する
 *
 *------------------------------------------------------------------------------
 
 malloc_all:
-		pea		($ffff00)
-		DOS		_MALLOC
-		move.l		(sp)+,d1		;d1.l = malloc size
-		tst.l		d0
-		beq		@f
+		pea		(-1)
+		DOS		_MALLOC3
+		move.l		d0,d1
+		addq.l		#1,d0
+		beq		@f			;060turbo.sysは組み込まれていない
 
-		and.l		d0,d1
-		beq		malloc_all_err
-		move.l		d1,-(sp)
+		andi.l		#$0fff_ffff,d1
+		move.l		d1,(sp)
+		DOS		_MALLOC3
+		bra		9f
+@@:
 		DOS		_MALLOC
-		addq.l		#4,sp
-@@:		rts
-
-malloc_all_err:
-		moveq		#-1,d0
+		move.l		d0,d1
+		andi.l		#$00ffffff,d1
+		move.l		d1,(sp)
+		DOS		_MALLOC
+9:
+		move.l		d0,(sp)+
+		bmi		malloc_err
 		rts
 
 
