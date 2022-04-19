@@ -3,7 +3,7 @@
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
 PATCHLEVEL:	.reg		'+15'
-PATCHDATE:	.reg		'2022-04-19'
+PATCHDATE:	.reg		'2022-04-20'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
 	.ifdef	__G2LK__

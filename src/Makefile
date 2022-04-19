@@ -22,7 +22,26 @@ OBJS2	= g2lk.o $(OBJS0)
 
 #
 
+SRCS	= $(OBJS0:.o=.s) main.s
+TXTS	= hlkev.txt kaiseki.txt
+SRC_ZIP	= src.zip
+HLK_ZIP	= hlkev.zip
+
+#
+
 all: $(HLK_R) #$(G2LK_R)
+
+#
+
+$(SRC_ZIP): $(SRCS) Makefile hlk.mac string.mac
+	rm -f $@
+	zip -9 $@ $^
+
+$(HLK_ZIP): $(SRC_ZIP) $(HLK_R) $(TXTS)
+	rm -f $@
+	zip -9 $@ $^
+
+#
 
 $(HLK_R): $(OBJS1)
 	$(LD) $(LDFLAGS) -r -o$@ $^
