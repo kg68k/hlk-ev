@@ -2,8 +2,8 @@
 
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
-PATCHLEVEL:	.reg		'+15'
-PATCHDATE:	.reg		'2022-04-20'
+PATCHLEVEL:	.reg		'+16-beta.1'
+PATCHDATE:	.reg		'2023-05-22'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
 	.ifdef	__G2LK__
@@ -1385,8 +1385,7 @@ option_d_sym_end:
 		tst.b		d1
 		beq		ana_opt_b40		;'='で終わっていなければエラー
 		movea.l		a4,a3
-		move.b		#'$',-(a3)
-		bsr		get_number
+		bsr		get_number_hex
 		bmi		ana_opt_b40		;bad option
 
 		move.l		d0,(a0)
@@ -1420,74 +1419,103 @@ get_arg_adr_end:
 		rts
 
 
+* 16進数接頭辞($、0x)がある場合はその長さを返す
+* in	a3.l	文字列
+* out	d0.l	接頭辞のバイト数(0なら接頭辞なし)
+*	ccr	Z=1:接頭辞なし Z=0:接頭辞あり
+
+get_hex_prefix_length:
+		cmpi.b		#'$',(a3)
+		bne		@f
+		moveq		#1,d0			;'$'
+		rts
+@@:
+		cmpi.b		#'0',(a3)
+		bne		@f
+		moveq		#$20,d0
+		or.b		(1,a3),d0
+		cmpi.b		#'x',d0
+		bne		@f
+		moveq		#2,d0			;'0x' or '0X'
+		rts
+@@:
+		moveq		#0,d0
+		rts
+
+
+* 数値収得(16進数)
+* in	a3.l	文字列
+* out	d0.l	数値
+*	ccr	N=0/Z=1:正常終了 N=1/Z=0:エラー
+
+get_number_hex:
+		PUSH		d1/a3
+		bsr		get_hex_prefix_length
+		adda.l		d0,a3			;$または0xを飛ばす
+
+		moveq		#0,d0
+		move.b		(a3)+,d1
+		beq		get_numhex_error
+get_numhex_loop:
+		cmpi.b		#'9',d1
+		bls		@f
+		andi.b		#$df,d1
+		cmpi.b		#'A',d1
+		bcs		get_numhex_error
+		subq.b		#'A'-('9'+1),d1
+@@:		subi.b		#'0',d1
+		cmpi.b		#$f,d1
+		bhi		get_numhex_error
+		cmpi.l		#$0fff_ffff,d0
+		bhi		get_numhex_error
+		lsl.l		#4,d0
+		or.b		d1,d0
+
+		move.b		(a3)+,d1
+		bne		get_numhex_loop
+		moveq		#0,d1
+		bra		@f
+get_numhex_error:
+		moveq		#-1,d1
+@@:		POP		d1/a3
+		rts
+
+
 * 数値収得(10進/16進判別)
-* in	a3.l	引数のアドレス
+* in	a3.l	文字列
 * out	d0.l	数値
 *	ccr	N=0/Z=1:正常終了 N=1/Z=0:エラー
 
 get_number::
-		PUSH		d1/a4
+		bsr		get_hex_prefix_length
+		bne		get_number_hex
+
+		PUSH		d1-d2/a3
 		moveq		#0,d0
 		moveq		#0,d1
-		movea.l		a3,a4
-		move.b		(a4)+,d1
+		move.b		(a3)+,d1
 		beq		get_number_error
-		cmpi.b		#'$',d1
-		beq		get_num_hex		;$*
-		cmpi.b		#'9',d1
-		bhi		get_number_error
-		cmpi.b		#'0',d1
-		bcs		get_number_error
-		bhi		get_num_dec		;[1-9]*
-		moveq		#$20,d1
-		or.b		(a4)+,d1
-		cmpi.b		#'x',d1
-		beq		get_num_hex		;0x*
-
-		subq.l		#1,a4			;0[1-9]*
-get_num_dec:	subq.l		#1,a4
 get_num_dec_loop:
-		move.b		(a4)+,d1
-		beq		get_number_end
 		subi.b		#'0',d1
 		cmpi.b		#9,d1
 		bhi		get_number_error
 		cmpi.l		#429496729.5,d0		;$ffff_ffff/10
 		bhi		get_number_error
 		add.l		d0,d0
-		move.l		d0,-(sp)
+		move.l		d0,d2
 		lsl.l		#2,d0
-		add.l		(sp)+,d0		;*10
+		add.l		d2,d0			;*10
 		add.l		d1,d0
-		bcc		get_num_dec_loop
+		bcs		get_number_error
+
+		move.b		(a3)+,d1
+		bne		get_num_dec_loop
+		moveq		#0,d1
+		bra		@f
 get_number_error:
 		moveq		#-1,d1
-		bra		@f
-get_number_end:
-		moveq		#0,d1
-@@:		POP		d1/a4
+@@:		POP		d1-d2/a3
 		rts
-
-get_num_hex:
-		move.b		(a4)+,d1
-		beq		get_number_error
-get_num_hex_loop:
-		cmpi.b		#'9',d1
-		bls		@f
-		andi.b		#$df,d1
-		cmpi.b		#'A',d1
-		bcs		get_number_error
-		subq.b		#'A'-('9'+1),d1
-@@:		subi.b		#'0',d1
-		cmpi.b		#$f,d1
-		bhi		get_number_error
-		cmpi.l		#$0fff_ffff,d0
-		bhi		get_number_error
-		lsl.l		#4,d0
-		or.b		d1,d0
-		move.b		(a4)+,d1
-		bne		get_num_hex_loop
-		bra		get_number_end
 
 
 * エラー終了
