@@ -441,10 +441,10 @@ pr_objname_end:	POP		d1-d2/a0-a1
 
 *------------------------------------------------------------------------------
 
-reg_obj_msg:	.dc.b		'Linked : '
+reg_obj_msg:	.dc.b		'リンク: '
 		.dc.b		0
 
-req_err:	.dc.b		'Request error : '
+req_err:	.dc.b		'リクエストエラー: '
 		.dc.b		0
 		.even
 

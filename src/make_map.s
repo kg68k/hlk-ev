@@ -935,11 +935,11 @@ flush_fpr_end:
 
 *------------------------------------------------------------------------------
 
-cant_open_msg:	.dc.b		"Can't open file : ",0
+cant_open_msg:	.dc.b		'マップファイルが作成できません: ',0
 
-device_full_msg:.dc.b		'Device full : ',0
+device_full_msg:.dc.b		'ディスクの空き容量がありません: ',0
 
-make_map_mes:	.dc.b		'Making map file...'
+make_map_mes:	.dc.b		'マップファイルを作成します...'
 fprint_crlf_mes:.dc.b		CRLF,0
 
 bar:		.dc.b		'=========================================================='

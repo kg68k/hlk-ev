@@ -1,6 +1,6 @@
-
-                        HLK evolution version 3.01+15
-                Copyright 1989-94 SALT, 2022-04-20 TcbnErik
+        HLK evolution
+          based on
+            X68k SILK Hi-Speed Linker v3.01 Copyright 1989-94 SALT
 
 
 ━☆ これはなに？ ☆━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -119,7 +119,7 @@ struprサブルーチンが終了しません。
         label::
         =================
     　この結果は0が返る筈ですが、hlk-3.01p3でリンクすると返値は2になって
-    しまします。
+    しまいます。
 
 前項で挙げた他の不都合も修正してあります。
 

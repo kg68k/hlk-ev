@@ -996,21 +996,17 @@ set_xref_end:	POP		d1-d3/a0-a1
 *------------------------------------------------------------------------------
 
 illegal_align_msg:
-		.dc.b		'Warning, illegal align size : '
-		.dc.b		0
+		.dc.b		'警告: 不正なアライン値です: ',0
 
-*------------------------------------------------------------------------------
+dup_warn:	.dc.b		'警告: シンボル名が重複しています: ',0
 
-dup_warn:	.dc.b		'Warning, duplicate definition : '
-		.dc.b		0
-
-dup_err:	.dc.b		'Duplicate definition : '
+dup_err:	.dc.b		'シンボル名が重複しています: '
 		.dc.b		0
 
 dup_err_in:	.dc.b		' in '
 		.dc.b		0
 
-undef_err:	.dc.b		'Undefined symbol(s) in '
+undef_err:	.dc.b		'未定義のシンボル in '
 		.dc.b		0
 
 		.even

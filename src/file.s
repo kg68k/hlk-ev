@@ -228,7 +228,7 @@ read_file_end:
 
 
 read_file_err1:
-		pea		(not_found,pc)		;not found
+		pea		(not_found,pc)
 		DOS		_PRINT
 		pea		(a0)
 		DOS		_PRINT
@@ -239,10 +239,10 @@ read_file_err1:
 		bra		read_file_end
 
 read_file_err2:
-		pea		(illegal_file,pc)	;illegal file size
+		pea		(illegal_file,pc)
 		bra		@f
 read_file_err3:
-		pea		(file_io,pc)		;file i/o error
+		pea		(file_io,pc)
 @@:		DOS		_PRINT
 		pea		full_name
 		DOS		_PRINT
@@ -256,7 +256,7 @@ read_file_err4:
 		add.l		d2,(a2)
 		sub.l		d2,(a1)
 
-		pea		(not_obj_arc,pc)	;not obj, arc file
+		pea		(not_obj_arc,pc)
 		DOS		_PRINT
 		pea		full_name
 		DOS		_PRINT
@@ -325,19 +325,16 @@ to_slash_isslash:
 
 o_ext:		.dc.b		'.o',0
 
-not_found:	.dc.b		'Not found : '
+not_found:	.dc.b		'ファイルがありません: '
 		.dc.b		0
 
-illegal_file:	.dc.b		'Illegal file size : '
+illegal_file:	.dc.b		'不正なファイルサイズです: '
 		.dc.b		0
 
-file_io:	.dc.b		'File I/O error : '
+file_io:	.dc.b		'ファイルI/Oエラー: '
 		.dc.b		0
 
-not_obj_arc:	.dc.b		'Not obj, arc file : '
-		.dc.b		0
-
-already:	.dc.b		'Already read : '
+not_obj_arc:	.dc.b		'オブジェクトファイルまたはアーカイブではありません: '
 		.dc.b		0
 
 		.even

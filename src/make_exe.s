@@ -587,7 +587,7 @@ make_exe_err4:
 		pea		(device_full_msg,pc)	;Device full
 		bra		@f
 make_exe_err_offset:
-		pea		(offset_tbl_msg,pc)	;再配置テーブルがある
+		pea		(rel_tbl_msg,pc)	;再配置テーブルがある
 		bra		@f
 make_exe_err_ill_offset:
 		pea		(ill_offset_msg,pc)	;奇数番地の再配置は出来ない
@@ -1664,9 +1664,9 @@ get_xref_label::
 
 check_byte_val:
 		cmp.l		#+$ff,d1
-		bgt		overflow_err
+		bgt		overflow_byte_err
 		cmp.l		#-$80,d1
-		blt		overflow_err
+		blt		overflow_byte_err
 		rts
 
 *------------------------------------------------------------------------------
@@ -1681,9 +1681,9 @@ check_byte_val:
 
 check_byte2_val:
 		cmp.l		#+$7f,d1
-		bgt		overflow_err
+		bgt		overflow_sbyte_err
 		cmp.l		#-$80,d1
-		blt		overflow_err
+		blt		overflow_sbyte_err
 		rts
 
 *------------------------------------------------------------------------------
@@ -1698,9 +1698,9 @@ check_byte2_val:
 
 check_word_val:
 		cmp.l		#+$ffff,d1
-		bgt		overflow_err
+		bgt		overflow_word_err
 		cmp.l		#-$8000,d1
-		blt		overflow_err
+		blt		overflow_word_err
 		rts
 
 *------------------------------------------------------------------------------
@@ -1715,9 +1715,9 @@ check_word_val:
 
 check_word2_val:
 		cmp.l		#+$7fff,d1
-		bgt		overflow_err
+		bgt		overflow_sword_err
 		cmp.l		#-$8000,d1
-		blt		overflow_err
+		blt		overflow_sword_err
 		rts
 
 *------------------------------------------------------------------------------
@@ -1771,9 +1771,21 @@ prn_err_loc_b1:
 *		rts
 
 
-overflow_err:
+overflow_byte_err:
 		PUSH		d0-d1/a0
-		pea		(overflow_msg,pc)
+		pea		(overflow_byte_msg,pc)
+		bra		@f
+overflow_sbyte_err:
+		PUSH		d0-d1/a0
+		pea		(overflow_sbyte_msg,pc)
+		bra		@f
+overflow_word_err:
+		PUSH		d0-d1/a0
+		pea		(overflow_word_msg,pc)
+		bra		@f
+overflow_sword_err:
+		PUSH		d0-d1/a0
+		pea		(overflow_sword_msg,pc)
 		bra		@f
 zero_err:
 		PUSH		d0-d1/a0
@@ -1783,9 +1795,13 @@ expression_err:
 		PUSH		d0-d1/a0
 		pea		(express_msg,pc)
 		bra		@f
-relative_err:
+adrs_byte_err:
 		PUSH		d0-d1/a0
-		pea		(relative_msg,pc)
+		pea		(adrs_byte_msg,pc)
+		bra		@f
+adrs_word_err:
+		PUSH		d0-d1/a0
+		pea		(adrs_word_msg,pc)
 		bra		@f
 @@:
 		DOS		_PRINT
@@ -2030,7 +2046,7 @@ wrt_lbl_40ff:
 							* d0.w = type
 		tst		d0			* d1.l = value
 		beq		wrt_lbl_40ff_b1		* abs
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		bra		wrt_lbl_40ff_b2
 wrt_lbl_40ff_b1	bsr		check_byte_val
 wrt_lbl_40ff_b2:
@@ -2054,7 +2070,7 @@ wrt_lbl_43ff:
 							* d0.w = type
 		tst		d0			* d1.l = value
 		beq		wrt_lbl_43ff_b1		* abs
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		bra		wrt_lbl_43ff_b2
 wrt_lbl_43ff_b1	bsr		check_byte_val
 wrt_lbl_43ff_b2	move.b		d1,(a5)+
@@ -2080,7 +2096,7 @@ wrt_lbl_41ff:
 		beq		wrt_lbl_41ff_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_41ff_b2
-wrt_lbl_41ff_b1	bsr		relative_err		* relative err!
+wrt_lbl_41ff_b1	bsr		adrs_word_err
 		bra		wrt_lbl_41ff_b4
 wrt_lbl_41ff_b2	cmp.w		#$0004,d5
 		bhi		wrt_lbl_41ff_b1
@@ -2185,6 +2201,15 @@ wrt_lbl_4007: * SXhas
 wrt_lbl_4008: * SXhas
 wrt_lbl_4009: * SXhas
 wrt_lbl_400a: * SXhas					;write byte (0, adr)
+		addq.l		#6,a0
+
+		check_section	wrt_lbl_400a
+
+		bsr		adrs_byte_err
+		clr.b		(a5)+
+		clr.b		(a5)+			;何でも良い
+wrt_lbl_400a_be	rts
+
 wrt_lbl_4101:
 wrt_lbl_4102:
 wrt_lbl_4103:
@@ -2194,12 +2219,12 @@ wrt_lbl_4109: * SXhas
 wrt_lbl_410a: * SXhas					;write word (adr)
 		addq.l		#6,a0
 
-		check_section	wrt_lbl_400a
+		check_section	wrt_lbl_410a
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		clr.b		(a5)+
 		clr.b		(a5)+			* 何でも良い
-wrt_lbl_400a_be	rts
+wrt_lbl_410a_be	rts
 
 
 wrt_lbl_4301:
@@ -2216,7 +2241,7 @@ wrt_lbl_430a: * SXhas
 
 		check_section	wrt_lbl_430a
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		clr.b		(a5)+			* 何でも良い
 wrt_lbl_430a_be	rts
 
@@ -2231,7 +2256,7 @@ wrt_lbl_4105: * SXhas
 		cmp.w		#$0004,d5
 		bls		wrt_lbl_4105_b1
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		bra		wrt_lbl_4105_b2
 
 wrt_lbl_4105_b1	bsr		check_word2_val
@@ -2250,7 +2275,7 @@ wrt_lbl_4106: * SXhas
 		cmp.w		#$0004,d5
 		bls		wrt_lbl_4106_b1
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		bra		wrt_lbl_4106_b2
 
 wrt_lbl_4106_b1	bsr		check_word2_val
@@ -2269,7 +2294,7 @@ wrt_lbl_4107: * SXhas
 		cmp.w		#$0004,d5
 		bls		wrt_lbl_4107_b1
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		bra		wrt_lbl_4107_b2
 
 wrt_lbl_4107_b1	bsr		check_word2_val
@@ -2449,7 +2474,7 @@ wrt_lbl_50ff:
 		add.l	d2,d1
 		tst	d0
 		beq	wrt_lbl_50ff_b1		* abs
-		bsr	relative_err		* relative err!
+		bsr	adrs_byte_err
 		bra	wrt_lbl_50ff_b2
 wrt_lbl_50ff_b1:
 		bsr	check_byte_val
@@ -2478,7 +2503,7 @@ wrt_lbl_53ff:
 		add.l		d2,d1
 		tst.w		d0
 		beq		wrt_lbl_53ff_b1		* abs
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		bra		wrt_lbl_53ff_b2
 wrt_lbl_53ff_b1	bsr		check_byte_val
 wrt_lbl_53ff_b2	move.b		d1,(a5)+
@@ -2507,7 +2532,7 @@ wrt_lbl_51ff:
 		beq		wrt_lbl_51ff_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_51ff_b2
-wrt_lbl_51ff_b1	bsr		relative_err		* relative err!
+wrt_lbl_51ff_b1	bsr		adrs_word_err
 		bra		wrt_lbl_51ff_b4
 wrt_lbl_51ff_b2	cmp.w		#$0004,d5
 		bhi		wrt_lbl_51ff_b1
@@ -2619,6 +2644,16 @@ wrt_lbl_5007: * SXhas
 wrt_lbl_5008: * SXhas
 wrt_lbl_5009: * SXhas
 wrt_lbl_500a: * SXhas					;write byte (0, adr)
+		lea		(10,a0),a0
+
+		check_section	wrt_lbl_500a
+
+		bsr		adrs_byte_err
+		clr.b		(a5)+
+		clr.b		(a5)+			;何でも良い
+wrt_lbl_500a_be:
+		rts
+
 wrt_lbl_5101:
 wrt_lbl_5102:
 wrt_lbl_5103:
@@ -2628,12 +2663,12 @@ wrt_lbl_5109: * SXhas
 wrt_lbl_510a: * SXhas					;write word (adr)
 		lea		(10,a0),a0
 
-		check_section	wrt_lbl_500a
+		check_section	wrt_lbl_510a
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		clr.b		(a5)+
 		clr.b		(a5)+			* 何でも良い
-wrt_lbl_500a_be:
+wrt_lbl_510a_be:
 		rts
 
 wrt_lbl_5301:
@@ -2650,7 +2685,7 @@ wrt_lbl_530a: * SXhas
 
 		check_section	wrt_lbl_530a
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		clr.b		(a5)+			* 何でも良い
 wrt_lbl_530a_be	rts
 
@@ -2666,7 +2701,7 @@ wrt_lbl_5105: * SXhas
 		cmp.w		#$0004,d5
 		bls		wrt_lbl_5105_b1
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		bra		wrt_lbl_5105_b2
 
 wrt_lbl_5105_b1	bsr		check_word2_val
@@ -2686,7 +2721,7 @@ wrt_lbl_5106: * SXhas
 		cmp.w		#$0004,d5
 		bls		wrt_lbl_5106_b1
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		bra		wrt_lbl_5106_b2
 
 wrt_lbl_5106_b1	bsr		check_word2_val
@@ -2706,7 +2741,7 @@ wrt_lbl_5107: * SXhas
 		cmp.w		#$0004,d5
 		bls		wrt_lbl_5107_b1
 
-		bsr		relative_err		* relative err!
+		bsr		adrs_word_err
 		bra		wrt_lbl_5107_b2
 
 wrt_lbl_5107_b1	bsr		check_word2_val
@@ -2899,7 +2934,7 @@ wrt_lbl_6501:
 		beq		wrt_lbl_6501_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6501_b2
-wrt_lbl_6501_b1	bsr		relative_err		* relative err!
+wrt_lbl_6501_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6501_b3
 wrt_lbl_6501_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6501_b3:
@@ -2926,7 +2961,7 @@ wrt_lbl_6502:
 		beq		wrt_lbl_6502_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6502_b2
-wrt_lbl_6502_b1	bsr		relative_err		* relative err!
+wrt_lbl_6502_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6502_b3
 wrt_lbl_6502_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6502_b3:
@@ -2953,7 +2988,7 @@ wrt_lbl_6503:
 		beq		wrt_lbl_6503_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6503_b2
-wrt_lbl_6503_b1	bsr		relative_err		* relative err!
+wrt_lbl_6503_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6503_b3
 wrt_lbl_6503_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6503_b3:
@@ -2980,7 +3015,7 @@ wrt_lbl_6504:
 		beq		wrt_lbl_6504_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6504_b2
-wrt_lbl_6504_b1	bsr		relative_err		* relative err!
+wrt_lbl_6504_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6504_b3
 wrt_lbl_6504_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6504_b3:
@@ -3005,7 +3040,7 @@ wrt_lbl_6505:
 		beq		wrt_lbl_6505_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6505_b2
-wrt_lbl_6505_b1	bsr		relative_err		* relative err!
+wrt_lbl_6505_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6505_b3
 wrt_lbl_6505_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6505_b3:
@@ -3030,7 +3065,7 @@ wrt_lbl_6506:
 		beq		wrt_lbl_6506_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6506_b2
-wrt_lbl_6506_b1	bsr		relative_err		* relative err!
+wrt_lbl_6506_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6506_b3
 wrt_lbl_6506_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6506_b3:
@@ -3055,7 +3090,7 @@ wrt_lbl_6507:
 		beq		wrt_lbl_6507_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6507_b2
-wrt_lbl_6507_b1	bsr		relative_err		* relative err!
+wrt_lbl_6507_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6507_b3
 wrt_lbl_6507_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6507_b3:
@@ -3080,7 +3115,7 @@ wrt_lbl_6508:
 		beq		wrt_lbl_6508_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6508_b2
-wrt_lbl_6508_b1	bsr		relative_err		* relative err!
+wrt_lbl_6508_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6508_b3
 wrt_lbl_6508_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6508_b3:
@@ -3105,7 +3140,7 @@ wrt_lbl_6509:
 		bhi		wrt_lbl_6509_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6509_b2
-wrt_lbl_6509_b1	bsr		relative_err		* relative err!
+wrt_lbl_6509_b1	bsr		adrs_word_err
 		bra		wrt_lbl_6509_b3
 wrt_lbl_6509_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_6509_b3:
@@ -3130,7 +3165,7 @@ wrt_lbl_650a:
 		beq		wrt_lbl_650a_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_650a_b2
-wrt_lbl_650a_b1	bsr		relative_err		* relative err!
+wrt_lbl_650a_b1	bsr		adrs_word_err
 		bra		wrt_lbl_650a_b3
 wrt_lbl_650a_b2	bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_lbl_650a_b3:
@@ -3147,7 +3182,7 @@ wrt_lbl_650a_be	rts
 *------------------------------------------------------------------------------
 
 wrt_lbl_6b01:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_text_pos,d2
 		move.w		(a0)+,d0
@@ -3164,7 +3199,7 @@ wrt_lbl_6b01:						* v2.00
 		beq		wrt_lbl_6b01_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6b01_b2
-wrt_lbl_6b01_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b01_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b01_b3
 wrt_lbl_6b01_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b01_b3	move.b		d1,(a5)+
@@ -3172,7 +3207,7 @@ wrt_lbl_6b01_be	rts
 
 
 wrt_lbl_6b02:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_data_pos,d2
 		move.w		(a0)+,d0
@@ -3189,7 +3224,7 @@ wrt_lbl_6b02:						* v2.00
 		beq		wrt_lbl_6b02_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6b02_b2
-wrt_lbl_6b02_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b02_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b02_b3
 wrt_lbl_6b02_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b02_b3	move.b		d1,(a5)+
@@ -3197,7 +3232,7 @@ wrt_lbl_6b02_be	rts
 
 
 wrt_lbl_6b03:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_bss_pos,d2
 		move.w		(a0)+,d0
@@ -3214,7 +3249,7 @@ wrt_lbl_6b03:						* v2.00
 		beq		wrt_lbl_6b03_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6b03_b2
-wrt_lbl_6b03_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b03_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b03_b3
 wrt_lbl_6b03_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b03_b3	move.b		d1,(a5)+
@@ -3222,7 +3257,7 @@ wrt_lbl_6b03_be	rts
 
 
 wrt_lbl_6b04:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_stack_pos,d2
 		move.w		(a0)+,d0
@@ -3239,7 +3274,7 @@ wrt_lbl_6b04:						* v2.00
 		beq		wrt_lbl_6b04_b2
 		cmp.w		#$0004,d0
 		bls		wrt_lbl_6b04_b2
-wrt_lbl_6b04_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b04_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b04_b3
 wrt_lbl_6b04_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b04_b3	move.b		d1,(a5)+
@@ -3247,7 +3282,7 @@ wrt_lbl_6b04_be	rts
 
 
 wrt_lbl_6b05:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_rdata_pos,d2
 		move.w		(a0)+,d0
@@ -3262,7 +3297,7 @@ wrt_lbl_6b05:						* v2.00
 		beq		wrt_lbl_6b05_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6b05_b2
-wrt_lbl_6b05_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b05_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b05_b3
 wrt_lbl_6b05_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b05_b3	move.b		d1,(a5)+
@@ -3270,7 +3305,7 @@ wrt_lbl_6b05_be	rts
 
 
 wrt_lbl_6b06:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_rbss_pos,d2
 		move.w		(a0)+,d0
@@ -3285,7 +3320,7 @@ wrt_lbl_6b06:						* v2.00
 		beq		wrt_lbl_6b06_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6b06_b2
-wrt_lbl_6b06_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b06_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b06_b3
 wrt_lbl_6b06_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b06_b3	move.b		d1,(a5)+
@@ -3293,7 +3328,7 @@ wrt_lbl_6b06_be	rts
 
 
 wrt_lbl_6b07:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_rstack_pos,d2
 		move.w		(a0)+,d0
@@ -3308,7 +3343,7 @@ wrt_lbl_6b07:						* v2.00
 		beq		wrt_lbl_6b07_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6b07_b2
-wrt_lbl_6b07_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b07_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b07_b3
 wrt_lbl_6b07_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b07_b3	move.b		d1,(a5)+
@@ -3316,7 +3351,7 @@ wrt_lbl_6b07_be	rts
 
 
 wrt_lbl_6b08:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_rldata_pos,d2
 		move.w		(a0)+,d0
@@ -3331,7 +3366,7 @@ wrt_lbl_6b08:						* v2.00
 		beq		wrt_lbl_6b08_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6b08_b2
-wrt_lbl_6b08_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b08_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b08_b3
 wrt_lbl_6b08_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b08_b3	move.b		d1,(a5)+
@@ -3339,7 +3374,7 @@ wrt_lbl_6b08_be	rts
 
 
 wrt_lbl_6b09:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_rlbss_pos,d2
 		move.w		(a0)+,d0
@@ -3354,7 +3389,7 @@ wrt_lbl_6b09:						* v2.00
 		bhi		wrt_lbl_6b09_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6b09_b2
-wrt_lbl_6b09_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b09_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b09_b3
 wrt_lbl_6b09_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b09_b3	move.b		d1,(a5)+
@@ -3362,7 +3397,7 @@ wrt_lbl_6b09_be	rts
 
 
 wrt_lbl_6b0a:						* v2.00
-		addq.l		#2,a0			* write word (label - adr(a))
+		addq.l		#2,a0			* write byte (label - adr(a))
 		move.l		(a0)+,d2
 		add.l		obj_list_rlstack_pos,d2
 		move.w		(a0)+,d0
@@ -3377,7 +3412,7 @@ wrt_lbl_6b0a:						* v2.00
 		beq		wrt_lbl_6b0a_b1
 		cmp.w		#$0004,d0
 		bhi		wrt_lbl_6b0a_b2
-wrt_lbl_6b0a_b1	bsr		relative_err		* relative err!
+wrt_lbl_6b0a_b1	bsr		adrs_byte_err
 		bra		wrt_lbl_6b0a_b3
 wrt_lbl_6b0a_b2	bsr		check_byte2_val		* -$80 ～ $7f
 wrt_lbl_6b0a_b3	move.b		d1,(a5)+
@@ -3544,7 +3579,7 @@ wrt_stk_9000:
 		tst		d0
 		beq		wrt_stk_9000_b1
 		bmi		wrt_stk_9000_b2
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		bra		wrt_stk_9000_b2
 wrt_stk_9000_b1:bsr		check_byte_val
 wrt_stk_9000_b2:
@@ -3569,7 +3604,7 @@ wrt_stk_9300:
 		tst		d0
 		beq		wrt_stk_9300_b1
 		bmi		wrt_stk_9300_b2
-		bsr		relative_err		* relative err!
+		bsr		adrs_byte_err
 		bra		wrt_stk_9300_b2
 wrt_stk_9300_b1:bsr		check_byte_val
 wrt_stk_9300_b2:move.b		d1,(a5)+
@@ -3593,12 +3628,12 @@ wrt_stk_9100:
 		beq		wrt_stk_9100_b2
 		bmi		wrt_stk_9100_b3
 		cmpi		#1,d0
-		beq		wrt_stk_9100_b1		* relative err!
+		beq		wrt_stk_9100_b1
 		cmpi		#$0004,d5
-		bhi		wrt_stk_9100_b1		* relative err!
+		bhi		wrt_stk_9100_b1
 		bsr		check_word2_val
 		bra		wrt_stk_9100_b3
-wrt_stk_9100_b1:bsr		relative_err		* relative err!
+wrt_stk_9100_b1:bsr		adrs_word_err
 		bra		wrt_stk_9100_b3
 wrt_stk_9100_b2:bsr		check_word_val
 wrt_stk_9100_b3:
@@ -3655,9 +3690,9 @@ wrt_stk_9900:
 		beq		wrt_stk_9900_b1
 		cmpi		#$0004,d5
 		bls		wrt_stk_9900_b2
-wrt_stk_9900_b1:bsr		relative_err		* relative err!
+wrt_stk_9900_b1:bsr		adrs_word_err
 		bra		wrt_stk_9900_b3
-wrt_stk_9900_b2:bsr		check_word2_val		* -$8000 ～ $7ffff
+wrt_stk_9900_b2:bsr		check_word2_val		* -$8000 ～ $7fff
 wrt_stk_9900_b3:
 		MOVEW_D1_A5PI
 wrt_stk_9900_be:
@@ -4423,21 +4458,25 @@ divs_d0d1_end	POP		d2-d5
 
 *------------------------------------------------------------------------------
 
-illegal_scdinfo:.dc.b		'Illegal SCD information in ',0
+illegal_scdinfo:.dc.b		'不正なSCD情報 in ',0
 
-relative_msg:	.dc.b		'Relative error in ',0
+adrs_byte_msg:	.dc.b		'アドレス属性シンボルの値をバイトサイズで出力 in ',0
+adrs_word_msg:	.dc.b		'アドレス属性シンボルの値をワードサイズで出力 in ',0
 
-division_msg:	.dc.b		'Division by zero in ',0
+division_msg:	.dc.b		'ゼロ除算 in ',0
 
-express_msg:	.dc.b		'Illegal expression in ',0
+express_msg:	.dc.b		'不正な式 in ',0
 
-overflow_msg:	.dc.b		'Over flow in ',0
+overflow_byte_msg:	.dc.b	'バイトサイズ(-$80～$ff)で表現できない値 in ',0
+overflow_sbyte_msg:	.dc.b	'バイトサイズ(-$80～$7f)で表現できない値 in ',0
+overflow_word_msg:	.dc.b	'ワードサイズ(-$8000～$ffff)で表現できない値 in ',0
+overflow_sword_msg:	.dc.b	'ワードサイズ(-$8000～$7fff)で表現できない値 in ',0
 
-stack_over_msg:	.dc.b		'Calc stack over flow in ',0
+stack_over_msg:	.dc.b		'計算用スタックが溢れました in ',0
 
-stack_under_msg:.dc.b		'Calc stack under flow in ',0
+stack_under_msg:.dc.b		'計算用スタックに値がありません in ',0
 
-dup_exec_msg:	.dc.b		'Duplicate exec address in ',0
+dup_exec_msg:	.dc.b		'複数の実行開始アドレスを指定することはできません in ',0
 
 in_msg:		.dc.b		' in ',0
 
@@ -4451,22 +4490,22 @@ rdata_msg:	.dc.b		' (rdata)',0
 
 rldata_msg:	.dc.b		' (rldata)',0
 
-cant_open_msg:	.dc.b		"Can't open file : ",0
+cant_open_msg:	.dc.b		'実行ファイルが作成できません: ',0
 
-file_io_msg:	.dc.b		'File I/O error : ',0
+file_io_msg:	.dc.b		'ファイルI/Oエラー: ',0
 
-device_full_msg:.dc.b		'Device full : ',0
+device_full_msg:.dc.b		'ディスクの空き容量がありません: ',0
 
-offset_tbl_msg:	.dc.b		'Using relocate table : ',0
+rel_tbl_msg:	.dc.b		'再配置テーブルが使われています: ',0
 
-ill_offset_msg:	.dc.b		'Relocate at odd address : ',0
+ill_offset_msg:	.dc.b		'再配置対象が奇数アドレスにあります: ',0
 
-exec_adr_msg:	.dc.b		'Exec address is not top of file : ',0
+exec_adr_msg:	.dc.b		'実行開始アドレスがファイル先頭ではありません: ',0
 
-unmatch_size:	.dc.b		'Unmatch roffset size (?_?)!',CRLF,CRLF
+unmatch_size:	.dc.b		'roffsetサイズ不一致(?_?)!',CRLF,CRLF
 		.dc.b		0
 
-make_exe_mes:	.dc.b		'Making executable file...',CRLF
+make_exe_mes:	.dc.b		'実行ファイルを作成します...',CRLF
 		.dc.b		0
 
 		.even

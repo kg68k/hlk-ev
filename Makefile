@@ -8,7 +8,7 @@ SRC_DIR = src
 BLD_DIR = build
 
 
-DOCS = hlkev.txt kaiseki.txt
+DOCS = hlkev.txt kaiseki.txt CHANGELOG.txt
 SJ_DOCS = $(addprefix $(BLD_DIR)/,$(DOCS))
 
 SRCS = $(wildcard $(SRC_DIR)/*)
@@ -24,6 +24,9 @@ directories: $(BLD_DIR)
 $(BLD_DIR):
 	$(MKDIR_P) $@
 
+
+$(BLD_DIR)/CHANGELOG.txt: CHANGELOG.md
+	$(U8TOSJ) < $^ >! $@
 
 $(BLD_DIR)/%.txt: %.txt
 	$(U8TOSJ) < $^ >! $@

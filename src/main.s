@@ -3,7 +3,7 @@
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
 PATCHLEVEL:	.reg		'+16-beta.1'
-PATCHDATE:	.reg		'2023-05-22'
+PATCHDATE:	.reg		'2023-06-01'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
 	.ifdef	__G2LK__
@@ -1058,9 +1058,6 @@ option_i_indirect:
 		bsr		get_arg_adr
 		beq		ana_opt_b50		;bad option
 
-*		tas		(INDIR_FLAG,a6)
-*		bne		indir_mode_err		;二重指定不可
-
 		clr		-(sp)
 		pea		(a3)
 		DOS		_OPEN
@@ -1520,10 +1517,6 @@ get_number_error:
 
 * エラー終了
 
-*indir_mode_err:
-*		pea		(indir_mode_err_msg,pc)
-*		bra		error_exit_p
-
 indir_open_err:
 		pea		(nf_indir_msg,pc)
 		DOS		_PRINT
@@ -1887,9 +1880,9 @@ usage_msg:	.dc.b		'usege: ',PROGNAME,' [switch] file [+file] ...',CRLF
 ****		.dc.b		'	-z		.z 形式実行ファイルの作成',CRLF
 		.dc.b		'	-0 / -1		.ctor/.dtor に対応しない / する',CRLF
 		.dc.b		CRLF
-		.dc.b		'	--help (-h)	使用法表示',CRLF
-		.dc.b		'	--quiet (-z)	--verbose (-v) オプションを取り消す',CRLF
-		.dc.b		'	--verbose (-v)	詳細表示',CRLF
+		.dc.b		'	-h / --help	使用法表示',CRLF
+		.dc.b		'	-z / --quiet	-v/--verbose オプションを取り消す',CRLF
+		.dc.b		'	-v / --verbose	詳細表示',CRLF
 		.dc.b		'	--version	バージョン表示',CRLF
 		.dc.b		CRLF
 		.dc.b		'	環境変数 ',ENVNAME,' の内容がコマンドラインの手前に挿入されます.',CRLF
@@ -1901,40 +1894,36 @@ str_quiet:	.dc.b		'quiet',0
 str_verbose:	.dc.b		'verbose',0
 str_version:	.dc.b		'version',0
 
-too_many_args:	.dc.b		'Too many arguments',CRLF
+too_many_args:	.dc.b		'引数が多すぎます。',CRLF
 		.dc.b		0
 
-prog_err_msg:	.dc.b		'Internal error at : '
+prog_err_msg:	.dc.b		'内部エラー at : '
 		.dc.b		0
 
-prog_err_msg2:	.dc.b		'このエラーはプログラムのバグによって発生した可能性が大です．',CRLF
-		.dc.b		'作者にお知らせ下さい．できる限りの事はやってみます．(;_;)',CRLF
+prog_err_msg2:	.dc.b		'このエラーはプログラムのバグによって発生した可能性が大です。',CRLF
+		.dc.b		'作者にお知らせ下さい。できる限りの事はやってみます。(;_;)',CRLF
 		.dc.b		CRLF
 		.dc.b		0
 
-malloc_err_msg:	.dc.b		'Out of memory !! (ﾟ_ﾟ;',CRLF
+malloc_err_msg:	.dc.b		'メモリが不足しています。',CRLF
 		.dc.b		0
 
-unknown_opt_msg:.dc.b		'Unknown option : '
+unknown_opt_msg:.dc.b		'対応していないオプション: '
 		.dc.b		0
 
-bad_opt_msg:	.dc.b		'Bad option : '
+bad_opt_msg:	.dc.b		'オプションの指定が正しくありません: '
 		.dc.b		0
 
-*indir_mode_err_msg:
-*		.dc.b		'Indirect mode error',CRLF
-*		.dc.b		0
-
-nf_indir_msg:	.dc.b		'Not found indirect file : '
+nf_indir_msg:	.dc.b		'インダイレクトファイルがありません: '
 		.dc.b		0
 
-undef_env_lib:	.dc.b		"Undefined environment variable 'lib'",CRLF
+undef_env_lib:	.dc.b		'環境変数 lib が定義されていません。',CRLF
 		.dc.b		0
 
-already_msg:	.dc.b		'Already read : '
+already_msg:	.dc.b		'読み込み済み: '
 		.dc.b		0
 
-unknown_msg:	.dc.b		'Unknown command : '
+unknown_msg:	.dc.b		'未対応のコマンド: '
 		.dc.b		0
 
 at_msg:		.dc.b		' at '
@@ -1943,10 +1932,10 @@ at_msg:		.dc.b		' at '
 in_msg:		.dc.b		' in '
 		.dc.b		0
 
-no_g2lk_msg:	.dc.b		'Using (do)ctor/dtor without -1 option.',CRLF
+no_g2lk_msg:	.dc.b		'(do)ctor/dtor には -1 オプションの指定が必要です。',CRLF
 		.dc.b		0
 
-no_doxtor_msg:	.dc.b		'Using ctor/dtor without .doctor/.dodtor.',CRLF
+no_doxtor_msg:	.dc.b		'.doctor/.dodtor なしに ctor/dtor が使われています。',CRLF
 		.dc.b		0
 
 crlf:		.dc.b		CRLF,0
