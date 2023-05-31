@@ -817,20 +817,31 @@ program_err::
 *
 *------------------------------------------------------------------------------
 
+UNEXPECTED_MARK:	.equ	$deadface	;DOS _MALLOC3の未実装、成功、失敗時に取り得ない値
+
 malloc_huge:
+		move.l		#UNEXPECTED_MARK,d1
 		pea		(-1)
+		move.l		d1,d0
 		DOS		_MALLOC3
 		addq.l		#4,sp
+		cmp.l		d1,d0
+		beq		malloc3_unexpected_err
 		move.l		d0,d1
 		addq.l		#1,d0
 		beq		malloc_all		;060turbo.sysは組み込まれていない
 
-		andi.l		#$0fff_ffff,d1
+		lsl.l		#4,d1
+		lsr.l		#4,d1			;andi.l #$0fff_ffff,d1
 		move.l		d1,-(sp)
 		DOS		_MALLOC3
 		move.l		d0,(sp)+
 		bmi		malloc_err
 		rts
+
+malloc3_unexpected_err:
+		pea		(malloc3_err_msg,pc)
+		bra		error_exit_p
 
 
 *------------------------------------------------------------------------------
@@ -1885,8 +1896,8 @@ usage_msg:	.dc.b		'usege: ',PROGNAME,' [switch] file [+file] ...',CRLF
 		.dc.b		'	-v / --verbose	詳細表示',CRLF
 		.dc.b		'	--version	バージョン表示',CRLF
 		.dc.b		CRLF
-		.dc.b		'	環境変数 ',ENVNAME,' の内容がコマンドラインの手前に挿入されます.',CRLF
-		.dc.b		'	ファイル名先頭に + をつけたオブジェクトを先頭にリンクします.',CRLF
+		.dc.b		'	環境変数 ',ENVNAME,' の内容がコマンドラインの手前に挿入されます。',CRLF
+		.dc.b		'	ファイル名先頭に + をつけたオブジェクトを先頭にリンクします。',CRLF
 		.dc.b		0
 
 str_help:	.dc.b		'help',0
@@ -1906,6 +1917,9 @@ prog_err_msg2:	.dc.b		'このエラーはプログラムのバグによって発
 		.dc.b		0
 
 malloc_err_msg:	.dc.b		'メモリが不足しています。',CRLF
+		.dc.b		0
+
+malloc3_err_msg:.dc.b		'DOS _MALLOC3 の戻り値が想定外の値です。',CRLF
 		.dc.b		0
 
 unknown_opt_msg:.dc.b		'対応していないオプション: '
