@@ -2,19 +2,9 @@
 
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
-PATCHLEVEL:	.reg		'+17'
-PATCHDATE:	.reg		'2023-07-10'
+PATCHLEVEL:	.reg		'+18-beta.1'
+PATCHDATE:	.reg		'2023-07-11'
 PATCHAUTHOR:	.reg		'TcbnErik'
-
-	.ifdef	__G2LK__
-PROGNAME:	.reg		'g2lk'
-ENVNAME:	.reg		'G2LK'
-TYPE:		.reg		'[g2lk]'
-	.else
-PROGNAME:	.reg		'hlk'
-ENVNAME:	.reg		'HLK'
-TYPE:		.reg		''
-	.endif
 
 
 * Include File -------------------------------- *
@@ -99,15 +89,9 @@ main:
 		dbra		d1,@b
 
 		move.l		(main-$100+$c4,pc),d0
-	.ifdef	__G2LK__
-		andi.l		#$dfdfdf00,d0
-		cmpi.l		#'HLK'<<8,d0
-		sne		(G2LK_MODE_FLAG,a6)
-	.else
-		andi.l		#$dfffdfdf,d0
-		cmpi.l		#'G2LK',d0
+		ori.l		#$20002020,d0
+		cmpi.l		#'g2lk',d0
 		seq		(G2LK_MODE_FLAG,a6)
-	.endif
 
 		lea		(OBJ_LIST_HEAD,a6),a0
 		move.l		a0,(OBJ_LIST_WP,a6)
@@ -146,9 +130,14 @@ main:
 		bsr		init_arg
 		lea		(16,sp),sp
 
+		lea		(env_hlk,pc),a0
+		tst.b		(G2LK_MODE_FLAG,a6)
+		beq		@f
+		addq.l		#env_g2lk-env_hlk,a0
+@@:
 		pea		(TEMP,a6)
 		clr.l		-(sp)
-		pea		(env_hlk,pc)
+		pea		(a0)
 		DOS		_GETENV
 		addq.l		#12-4,sp
 		move.l		d0,(sp)+
@@ -1866,11 +1855,11 @@ hex_table::	.dc.b		'0123456789abcdef'
 align_size::	.dc.l		ALIGN_DEFAULT
 
 *title_msg:	.dc.b		'X68k SILK Hi-Speed Linker v3.01 Copyright 1989-94 SALT',CRLF
-title_msg:	.dc.b		PROGRAM,' version ',VERSION,PATCHLEVEL,TYPE
+title_msg:	.dc.b		PROGRAM,' version ',VERSION,PATCHLEVEL
 ver_msg_end:	.dc.b		' Copyright 1989-94 SALT, ',PATCHDATE,' ',PATCHAUTHOR,'.',CRLF
 		.dc.b		0
 
-usage_msg:	.dc.b		'usege: ',PROGNAME,' [switch] file [+file] ...',CRLF
+usage_msg:	.dc.b		'usege: hlk [switch] file [+file] ...',CRLF
 		.dc.b		'	-a / -an	実行ファイルの拡張子省略時に .x を付けない',CRLF
 		.dc.b		'	-b num		ベースアドレスの設定',CRLF
 		.dc.b		'	-d label=num	シンボルの定義',CRLF
@@ -1896,7 +1885,7 @@ usage_msg:	.dc.b		'usege: ',PROGNAME,' [switch] file [+file] ...',CRLF
 		.dc.b		'	-v / --verbose	詳細表示',CRLF
 		.dc.b		'	--version	バージョン表示',CRLF
 		.dc.b		CRLF
-		.dc.b		'	環境変数 ',ENVNAME,' の内容がコマンドラインの手前に挿入されます。',CRLF
+		.dc.b		'	環境変数 HLK の内容がコマンドラインの手前に挿入されます。',CRLF
 		.dc.b		'	ファイル名先頭に + をつけたオブジェクトを先頭にリンクします。',CRLF
 		.dc.b		0
 
@@ -1956,7 +1945,8 @@ crlf:		.dc.b		CRLF,0
 
 lib_head:*	.dc.b		'lib',0
 env_lib:	.dc.b		'lib',0
-env_hlk:	.dc.b		ENVNAME,0
+env_hlk:	.dc.b		'HLK',0
+env_g2lk:	.dc.b		'G2LK',0
 env_slash:	.dc.b		'SLASH',0
 
 ext_a:		.dc.b		'.a',0

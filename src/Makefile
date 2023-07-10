@@ -7,10 +7,7 @@ LD	= hlk
 #
 
 HLK_R		= hlk.r
-G2LK_R		= g2lk.r
-
 HLK_X		= hlk.x
-G2LK_X		= g2lk.x
 
 #
 
@@ -18,7 +15,6 @@ OBJS0	= getarg.o analyze.o label.o object.o \
 	  make_exe.o make_map.o roffset.o file.o string.o
 
 OBJS1	= hlk.o $(OBJS0)
-OBJS2	= g2lk.o $(OBJS0)
 
 #
 
@@ -29,7 +25,7 @@ HLK_ZIP	= hlkev.zip
 
 #
 
-all: $(HLK_R) #$(G2LK_R)
+all: $(HLK_R)
 
 #
 
@@ -37,7 +33,7 @@ $(SRC_ZIP): $(SRCS) Makefile hlk.mac string.mac
 	rm -f $@
 	zip -9 $@ $^
 
-$(HLK_ZIP): $(HLK_R) $(TXTS)  #$(SRC_ZIP)
+$(HLK_ZIP): $(HLK_R) $(TXTS)
 	rm -f $@
 	zip -9 $@ $^
 
@@ -46,13 +42,7 @@ $(HLK_ZIP): $(HLK_R) $(TXTS)  #$(SRC_ZIP)
 $(HLK_R): $(OBJS1)
 	$(LD) $(LDFLAGS) -r -o$@ $^
 
-$(G2LK_R): $(OBJS2)
-	$(LD) $(LDFLAGS) -r -o$@ $^
-
 $(HLK_X): $(OBJS1)
-	$(LD) $(LDFLAGS) -o$@ $^
-
-$(G2LK_X): $(OBJS2)
 	$(LD) $(LDFLAGS) -o$@ $^
 
 #
@@ -61,7 +51,6 @@ $(G2LK_X): $(OBJS2)
 	$(AS) $(ASFLAGS) $<
 
 hlk.o:	main.s hlk.mac string.mac	; $(AS) $(ASFLAGS) -o$@ main.s
-g2lk.o:	main.s hlk.mac string.mac	; $(AS) $(ASFLAGS) -o$@ main.s -s__G2LK__
 #
 
 getarg.o:	hlk.mac
