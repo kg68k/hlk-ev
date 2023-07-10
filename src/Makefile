@@ -1,6 +1,6 @@
 # Makefile for HLK evolution
 
-AS	= has
+AS	= has060
 ASFLAGS	= -c4 -s__CRLF__
 LD	= hlk
 

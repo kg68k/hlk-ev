@@ -2,8 +2,8 @@
 
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
-PATCHLEVEL:	.reg		'+16'
-PATCHDATE:	.reg		'2023-06-03'
+PATCHLEVEL:	.reg		'+17'
+PATCHDATE:	.reg		'2023-07-10'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
 	.ifdef	__G2LK__
@@ -831,8 +831,8 @@ malloc_huge:
 		addq.l		#1,d0
 		beq		malloc_all		;060turbo.sysは組み込まれていない
 
-		lsl.l		#4,d1
-		lsr.l		#4,d1			;andi.l #$0fff_ffff,d1
+		lsl.l		#1,d1
+		lsr.l		#1,d1			;andi.l #$7fff_ffff,d1
 		move.l		d1,-(sp)
 		DOS		_MALLOC3
 		move.l		d0,(sp)+
