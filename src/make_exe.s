@@ -500,9 +500,27 @@ make_exe_r_no_check:
 		cmp.l		d0,d7
 		bcs		malloc_err
 
-		move.l		(X_TextSize,a3),d1
+		move.l		(X_TextSize,a3),d1	;ファイルに書き出すサイズとバッファ
 		add.l		(X_DataSize,a3),d1
 		lea		(X_HEADER_SIZE,a3),a3
+
+		tst.b		(MAKEMCS_FLAG,a0)
+		beq		make_exe_r_notmcs
+
+		moveq		#14,d0			;MACS(.mcs)ファイル形式の検査
+		cmp.l		d0,d1
+		bcs		make_exe_err_mcs	;ファイルサイズが小さすぎる
+		lea		(a3),a1
+		cmpi.l		#'MACS',(a1)+
+		bne		@f
+		cmpi.l		#'DATA',(a1)+
+@@:		bne		make_exe_err_mcs
+		addq.l		#2,a1			;データ形式バージョン($01_00)
+
+		move.l		(X_BssSize-X_HEADER_SIZE,a3),d0
+		add.l		d1,d0			;ファイルサイズを
+		move.l		d0,(a1)			;MACSファイルのヘッダ内に埋め込む
+make_exe_r_notmcs:
 		bra		make_exe_open
 
 make_exe_x:
@@ -594,6 +612,9 @@ make_exe_err_ill_offset:
 		bra		@f
 make_exe_err_adr:
 		pea		(exec_adr_msg,pc)	;実行アドレスが先頭からではない
+		bra		@f
+make_exe_err_mcs:
+		pea		(not_mcs_msg,pc)
 		bra		@f
 @@:
 		DOS		_PRINT
@@ -4501,6 +4522,8 @@ rel_tbl_msg:	.dc.b		'再配置テーブルが使われています: ',0
 ill_offset_msg:	.dc.b		'再配置対象が奇数アドレスにあります: ',0
 
 exec_adr_msg:	.dc.b		'実行開始アドレスがファイル先頭ではありません: ',0
+
+not_mcs_msg:	.dc.b		'MACS形式ファイルではありません: ',0
 
 unmatch_size:	.dc.b		'roffsetサイズ不一致(?_?)!',CRLF,CRLF
 		.dc.b		0

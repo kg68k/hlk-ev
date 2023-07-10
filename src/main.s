@@ -2,7 +2,7 @@
 
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
-PATCHLEVEL:	.reg		'+18-beta.1'
+PATCHLEVEL:	.reg		'+18-beta.2'
 PATCHDATE:	.reg		'2023-07-11'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
@@ -1001,6 +1001,7 @@ long_opt_table:
 		.dc		str_quiet-@b	,ana_opt_b550-@b
 		.dc		str_verbose-@b	,ana_opt_b400-@b
 		.dc		str_version-@b	,print_version-@b
+		.dc		str_makemcs-@b,	,option_makemcs-@b
 		.dc		0
 
 
@@ -1275,6 +1276,11 @@ ana_opt_b600:	st		(TITLE_FLAG,a6)
 * -a (no 'x' ext.)
 ana_opt_b650:	lea		(NO_X_EXT_FLAG,a6),a4
 		bra		ana_opt_check_an_rn
+
+* --makemcs
+option_makemcs:
+		st		(MAKEMCS_FLAG,a6)
+		bra		option_r_rtype
 
 * -r / -rn (.r type exec file)
 option_r_rtype:
@@ -1693,7 +1699,10 @@ mk_exec_name_b2:
 		lea		(NAMECK_Ext,a3),a0
 		tst.b		(a0)
 		bne		mk_exname_b3
-@@:		lea		(ext_r,pc),a0
+@@:		lea		(ext_mcs,pc),a0
+		tst.b		(MAKEMCS_FLAG,a6)
+		bne		mk_exname_b3
+		addq.l		#ext_r-ext_mcs,a0
 		tst.b		(EXEC_FILE_TYPE,a6)
 		bne		mk_exname_b3		;-aでも".r"は必ず付ける
 
@@ -1883,6 +1892,7 @@ usage_msg:	.dc.b		'usege: hlk [switch] file [+file] ...',CRLF
 		.dc.b		'	-h / --help	使用法表示',CRLF
 		.dc.b		'	-z / --quiet	-v/--verbose オプションを取り消す',CRLF
 		.dc.b		'	-v / --verbose	詳細表示',CRLF
+		.dc.b		'	--makemcs	MACS(.mcs)形式ファイルの作成',CRLF
 		.dc.b		'	--version	バージョン表示',CRLF
 		.dc.b		CRLF
 		.dc.b		'	環境変数 HLK の内容がコマンドラインの手前に挿入されます。',CRLF
@@ -1893,6 +1903,7 @@ str_help:	.dc.b		'help',0
 str_quiet:	.dc.b		'quiet',0
 str_verbose:	.dc.b		'verbose',0
 str_version:	.dc.b		'version',0
+str_makemcs:	.dc.b		'makemcs',0
 
 too_many_args:	.dc.b		'引数が多すぎます。',CRLF
 		.dc.b		0
@@ -1950,6 +1961,7 @@ env_g2lk:	.dc.b		'G2LK',0
 env_slash:	.dc.b		'SLASH',0
 
 ext_a:		.dc.b		'.a',0
+ext_mcs:	.dc.b		'.mcs',0
 ext_r:		.dc.b		'.r',0
 ext_x:		.dc.b		'.x',0
 ext_map:	.dc.b		'.map',0

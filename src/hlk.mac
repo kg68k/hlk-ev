@@ -177,6 +177,7 @@ OPT_AN_FLAG:	.ds.b		1
 
 EXEC_FILE_TYPE:	.ds.b		1
 OPT_RN_FLAG:	.ds.b		1
+MAKEMCS_FLAG:	.ds.b		1
 
 SLASH_CHAR:	.ds.b		1
 
