@@ -2,7 +2,7 @@
 
 PROGRAM:	.reg		'HLK evolution'
 VERSION:	.reg		'3.01'
-PATCHLEVEL:	.reg		'+18-beta.2'
+PATCHLEVEL:	.reg		'+18'
 PATCHDATE:	.reg		'2023-07-11'
 PATCHAUTHOR:	.reg		'TcbnErik'
 
