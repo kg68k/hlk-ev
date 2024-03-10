@@ -4,45 +4,56 @@ AS	= has060
 ASFLAGS	= -c4 -s__CRLF__
 LD	= hlk
 
+U8TOSJ = u8tosj
+
+SRCDIR_MK = ../srcdir.mk
+SRC_DIR = ../src
+-include $(SRCDIR_MK)
+
 #
 
-HLK_R		= hlk.r
-HLK_X		= hlk.x
+HLK_R	= hlk.r
+HLK_X	= hlk.x
 
 #
 
-OBJS0	= getarg.o analyze.o label.o object.o \
+SRCS	= main.s getarg.o analyze.o label.o object.o \
 	  make_exe.o make_map.o roffset.o file.o string.o
+OBJS	= $(SRCS:.s=.o)
 
-OBJS1	= hlk.o $(OBJS0)
-
-#
-
-SRCS	= $(OBJS0:.o=.s) main.s
 TXTS	= hlkev.txt kaiseki.txt CHANGELOG.txt
-SRC_ZIP	= src.zip
+
 HLK_ZIP	= hlkev.zip
 
 #
 
+.PHONY: all archive
+
 all: $(HLK_R)
 
-#
+archive: $(HLK_ZIP)
 
-$(SRC_ZIP): $(SRCS) Makefile hlk.mac string.mac
-	rm -f $@
-	zip -9 $@ $^
+#
 
 $(HLK_ZIP): $(HLK_R) $(TXTS)
 	rm -f $@
 	zip -9 $@ $^
 
+hlkev.txt: $(SRC_DIR)/../hlkev.txt
+	$(U8TOSJ) < $^ > $@
+
+kaiseki.txt: $(SRC_DIR)/../kaiseki.txt
+	$(U8TOSJ) < $^ > $@
+
+CHANGELOG.txt: $(SRC_DIR)/../CHANGELOG.md
+	$(U8TOSJ) < $^ > $@
+
 #
 
-$(HLK_R): $(OBJS1)
+$(HLK_R): $(OBJS)
 	$(LD) $(LDFLAGS) -r -o$@ $^
 
-$(HLK_X): $(OBJS1)
+$(HLK_X): $(OBJS)
 	$(LD) $(LDFLAGS) -o$@ $^
 
 #
@@ -50,9 +61,7 @@ $(HLK_X): $(OBJS1)
 .s.o:
 	$(AS) $(ASFLAGS) $<
 
-hlk.o:	main.s hlk.mac string.mac	; $(AS) $(ASFLAGS) -o$@ main.s
-#
-
+main.o:		hlk.mac string.mac
 getarg.o:	hlk.mac
 analize.o:	hlk.mac
 display.o:	hlk.mac
